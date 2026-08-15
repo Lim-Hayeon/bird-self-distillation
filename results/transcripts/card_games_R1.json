@@ -1,0 +1,256 @@
+[
+  {
+    "question_id": 465,
+    "question": "For the set of cards with \"Ancestor's Chosen\" in it, is there a Korean version of it?",
+    "gold_sql": "SELECT IIF(SUM(CASE WHEN T2.language = 'Korean' AND T2.translation IS NOT NULL THEN 1 ELSE 0 END) > 0, 'YES', 'NO') FROM cards AS T1 INNER JOIN set_translations AS T2 ON T2.setCode = T1.setCode WHERE T1.name = 'Ancestor''s Chosen'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT st.translation \nFROM cards c \nJOIN foreign_data fd ON c.uuid = fd.uuid \nWHERE c.name = 'Ancestor''s Chosen' AND fd.language = 'Korean'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "foreign_data 말고 set_translations 테이블을 setCode로 조인해야 해. 그리고 번역 내용을 그대로 반환하지 말고, 조건에 맞는 게 있는지 여부를 'YES'/'NO'로 반환해야 해.",
+        "sql": "SELECT CASE \n           WHEN COUNT(st.translation) > 0 THEN 'YES' \n           ELSE 'NO' \n       END AS has_korean_version\nFROM cards c \nJOIN sets s ON c.setCode = s.code \nJOIN set_translations st ON s.code = st.setCode \nWHERE c.name = 'Ancestor''s Chosen' AND st.language = 'Korean'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 459,
+    "question": "Which card costs more converted mana, \"Serra Angel\" or \"Shrine Keeper\"?",
+    "gold_sql": "SELECT name FROM cards WHERE name IN ('Serra Angel', 'Shrine Keeper') ORDER BY convertedManaCost DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT name, convertedManaCost \nFROM cards \nWHERE name IN ('Serra Angel', 'Shrine Keeper') \nORDER BY convertedManaCost DESC \nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "convertedManaCost 컬럼은 빼고 name만 SELECT해야 해.",
+        "sql": "SELECT name \nFROM cards \nWHERE name IN ('Serra Angel', 'Shrine Keeper') \nORDER BY convertedManaCost DESC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 477,
+    "question": "Which of these artists have designed a card in the set Coldsnap, Jeremy Jarvis, Aaron Miller or Chippy?",
+    "gold_sql": "SELECT T1.artist FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE (T2.name = 'Coldsnap' AND T1.artist = 'Chippy') OR (T2.name = 'Coldsnap' AND T1.artist = 'Aaron Miller') OR (T2.name = 'Coldsnap' AND T1.artist = 'Jeremy Jarvis') GROUP BY T1.artist",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT artist \nFROM cards \nWHERE setCode = 'Coldsnap' AND artist IN ('Jeremy Jarvis', 'Aaron Miller', 'Chippy')",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "convertedManaCost 컬럼은 빼고 name만 SELECT해야 해.",
+        "sql": "SELECT DISTINCT artist \nFROM cards \nWHERE setCode = 'Coldsnap' AND artist IN ('Jeremy Jarvis', 'Aaron Miller', 'Chippy')",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "cards.setCode는 코드값이지 이름이 아니야. 'Coldsnap'은 sets 테이블의 name이니까, sets 테이블을 setCode랑 조인해서 sets.name = 'Coldsnap' 조건으로 걸러야 해.",
+        "sql": "SELECT DISTINCT c.artist \nFROM cards c \nJOIN sets s ON c.setCode = s.code \nWHERE s.name = 'Coldsnap' AND c.artist IN ('Jeremy Jarvis', 'Aaron Miller', 'Chippy')",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 408,
+    "question": "How many unknown power cards contain info about the triggered ability",
+    "gold_sql": "SELECT Count(DISTINCT T1.id) FROM cards AS T1 INNER JOIN rulings AS T2 ON T1.uuid = T2.uuid WHERE (T1.power IS NULL OR T1.power = '*') AND T2.text LIKE '%triggered ability%'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) \nFROM cards \nWHERE (power IS NULL OR power = '*') \nAND text LIKE '%triggered ability%'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "text 컬럼은 cards가 아니라 rulings 테이블에 있어. rulings를 uuid로 조인해야 하고, COUNT는 DISTINCT id로 세야 해.",
+        "sql": "SELECT COUNT(DISTINCT r.id) \nFROM cards c \nJOIN rulings r ON c.uuid = r.uuid \nWHERE (c.power IS NULL OR c.power = '*') \nAND r.text LIKE '%triggered ability%'",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "DISTINCT id는 rulings.id가 아니라 cards.id 기준으로 세야 해.",
+        "sql": "SELECT COUNT(DISTINCT c.id) \nFROM cards c \nJOIN rulings r ON c.uuid = r.uuid \nWHERE (c.power IS NULL OR c.power = '*') \nAND r.text LIKE '%triggered ability%'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 341,
+    "question": "What are the borderless cards available without powerful foils?",
+    "gold_sql": "SELECT id FROM cards WHERE borderColor = 'borderless' AND (cardKingdomId IS NULL OR cardKingdomId IS NULL)",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT * FROM cards \nWHERE borderColor = 'borderless' \nAND (cardKingdomFoilId IS NULL OR cardKingdomId IS NULL)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "SELECT는 id 컬럼만 반환해야 해. 그리고 조건은 cardKingdomFoilId가 아니라 cardKingdomId IS NULL로만 판단해야 해.",
+        "sql": "SELECT id FROM cards \nWHERE borderColor = 'borderless' \nAND cardKingdomId IS NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 368,
+    "question": "What is the percentage of borderless cards?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN borderColor = 'borderless' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(id) FROM cards",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT (COUNT(CASE WHEN borderColor = 'borderless' THEN 1 END) * 100.0 / COUNT(id)) AS percentage_borderless\nFROM cards",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 391,
+    "question": "Among the Artifact cards, which are black color and comes with foreign languague translation?",
+    "gold_sql": "SELECT DISTINCT T1.name FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T1.originalType = 'Artifact' AND T1.colors = 'B'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.*\nFROM cards c\nJOIN foreign_data f ON c.uuid = f.uuid\nWHERE c.originalType = 'Artifact' AND c.colors = 'B'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "전체 컬럼(*) 말고 name 컬럼만 SELECT하고, DISTINCT 붙여야 해.",
+        "sql": "SELECT DISTINCT c.name\nFROM cards c\nJOIN foreign_data f ON c.uuid = f.uuid\nWHERE c.originalType = 'Artifact' AND c.colors = 'B'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 349,
+    "question": "Name the card and artist with the most ruling information. Also state if the card is a promotional printing.",
+    "gold_sql": "SELECT T1.name, T1.artist, T1.isPromo FROM cards AS T1 INNER JOIN rulings AS T2 ON T1.uuid = T2.uuid WHERE T1.isPromo = 1 AND T1.artist = (SELECT artist FROM cards WHERE isPromo = 1 GROUP BY artist HAVING COUNT(DISTINCT uuid) = (SELECT MAX(count_uuid) FROM ( SELECT COUNT(DISTINCT uuid) AS count_uuid FROM cards WHERE isPromo = 1 GROUP BY artist ))) LIMIT 1",
+    "final_correct": false,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.name, c.artist, c.isPromo\nFROM cards c\nJOIN rulings r ON c.uuid = r.uuid\nGROUP BY c.uuid\nHAVING COUNT(r.uuid) = (\n    SELECT MAX(rulings_count)\n    FROM (\n        SELECT COUNT(r.uuid) AS rulings_count\n        FROM cards c\n        JOIN rulings r ON c.uuid = r.uuid\n        GROUP BY c.uuid\n    )\n)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "isPromo = 1 조건으로 먼저 필터링해야 해. 그리고 카드 단위(c.uuid)가 아니라 artist 단위로 그룹핑해서, ruling 개수가 가장 많은 artist를 찾는 방식으로 바꿔야 해.",
+        "sql": "SELECT c.name, c.artist, c.isPromo\nFROM cards c\nJOIN rulings r ON c.uuid = r.uuid\nWHERE c.isPromo = 1\nGROUP BY c.artist\nHAVING COUNT(r.uuid) = (\n    SELECT MAX(rulings_count)\n    FROM (\n        SELECT COUNT(r.uuid) AS rulings_count\n        FROM cards c\n        JOIN rulings r ON c.uuid = r.uuid\n        WHERE c.isPromo = 1\n        GROUP BY c.artist\n    )\n)",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "COUNT(r.uuid)가 아니라 COUNT(DISTINCT uuid)로 세야 해, 그것도 rulings 조인 없이 cards 테이블 자체에서 계산해야 해 (uuid는 카드 자체의 고유 식별자야, ruling 개수가 아니라 promo 카드 개수를 세는 거야). LIMIT 1도 추가해야 해.",
+        "sql": "SELECT c.name, c.artist, c.isPromo\nFROM cards c\nWHERE c.isPromo = 1\nGROUP BY c.artist\nORDER BY COUNT(DISTINCT c.uuid) DESC\nLIMIT 1",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "question_id": 424,
+    "question": "What proportion of cards do not have a text box with a normal layout?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN isTextless = 1 AND layout = 'normal' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(*) FROM cards",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT (COUNT(CASE WHEN isTextless = 1 AND layout = 'normal' THEN 1 END) * 100.0) / COUNT(*) AS proportion\nFROM cards",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 462,
+    "question": "What's the Italian name of the set of cards with \"Ancestor's Chosen\" is in?",
+    "gold_sql": "SELECT translation FROM set_translations WHERE setCode IN ( SELECT setCode FROM cards WHERE name = 'Ancestor''s Chosen' ) AND language = 'Italian'",
+    "final_correct": false,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT st.translation \nFROM set_translations st \nJOIN cards c ON st.setCode = c.setCode \nWHERE c.name = 'Ancestor''s Chosen' AND st.language = 'Italian'",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "question_id": 402,
+    "question": "What is the percentage of Story Spotlight cards that do not have a text box? List them by their ID.",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN isTextless = 0 AND  isStorySpotlight = 1 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(id) FROM cards",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    (SUM(CASE WHEN isStorySpotlight = 1 AND isTextless = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) AS percentage,\n    GROUP_CONCAT(id) AS ids\nFROM \n    cards",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "GROUP_CONCAT으로 id 리스트 반환하지 말고, 퍼센트 값 하나만 SELECT해야 해. CAST도 REAL로 해줘.",
+        "sql": "SELECT \n    CAST(SUM(CASE WHEN isStorySpotlight = 1 AND isTextless = 0 THEN 1 ELSE 0 END) AS REAL) * 100.0 / COUNT(*) AS percentage\nFROM \n    cards",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 416,
+    "question": "What percentage of cards without power are in French?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T2.language = 'French' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T1.power IS NULL OR T1.power = '*'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT (COUNT(CASE WHEN f.language = 'French' THEN 1 END) * 100.0 / COUNT(*)) AS percentage\nFROM cards c\nLEFT JOIN foreign_data f ON c.uuid = f.uuid\nWHERE c.power IS NULL OR c.power = '*'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "LEFT JOIN 말고 INNER JOIN 써야 해. COUNT(CASE...)가 아니라 SUM(CASE...)로, CAST도 REAL로 해줘.",
+        "sql": "SELECT CAST(SUM(CASE WHEN f.language = 'French' THEN 1 ELSE 0 END) AS REAL) * 100.0 / COUNT(*) AS percentage\nFROM cards c\nINNER JOIN foreign_data f ON c.uuid = f.uuid\nWHERE c.power IS NULL OR c.power = '*'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 397,
+    "question": "What is the mana cost of cards with a normal layout, a 2003 frame version, with a black border color, and available in paper and mtgo?",
+    "gold_sql": "SELECT manaCost FROM cards WHERE availability = 'mtgo,paper' AND borderColor = 'black' AND frameVersion = 2003 AND layout = 'normal'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT manaCost FROM cards \nWHERE layout = 'normal' \nAND frameVersion = '2003' \nAND borderColor = 'black' \nAND availability = 'mtgo,paper'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 346,
+    "question": "List all the card id and artist with unknown power which are legal for commander play format.",
+    "gold_sql": "SELECT T1.id, T1.artist FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.status = 'Legal' AND T2.format = 'commander' AND (T1.power IS NULL OR T1.power = '*')",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT cards.id, cards.artist \nFROM cards \nJOIN legalities ON cards.uuid = legalities.uuid \nWHERE (cards.power = '*' OR cards.power IS NULL) \nAND legalities.format = 'commander' \nAND legalities.status = 'Legal'",
+        "correct": true
+      }
+    ]
+  }
+]

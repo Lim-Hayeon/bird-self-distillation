@@ -1,0 +1,225 @@
+[
+  {
+    "question_id": 479,
+    "question": "Among the cards with converted mana cost higher than 5 in the set Coldsnap, how many of them have unknown power?",
+    "gold_sql": "SELECT SUM(CASE WHEN T1.power = '*' OR T1.power IS NULL THEN 1 ELSE 0 END) FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T2.name = 'Coldsnap' AND T1.convertedManaCost > 5",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT c.uuid) \nFROM cards c \nJOIN sets s ON c.setCode = s.code \nWHERE s.name = 'Coldsnap' AND c.convertedManaCost > 5 AND (c.power = '*' OR c.power IS NULL)",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 472,
+    "question": "Among the sets in the block \"Ice Age\", how many of them have an Italian translation?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.id) FROM sets AS T1 INNER JOIN set_translations AS T2 ON T2.setCode = T1.code WHERE T1.block = 'Ice Age' AND T2.language = 'Italian' AND T2.translation IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT s.id) \nFROM sets s \nJOIN set_translations st ON s.code = st.setCode \nWHERE s.block = 'Ice Age' AND st.language = 'Italian' AND st.translation IS NOT NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 409,
+    "question": "Indicates the number of cards with pre-modern format, ruling text \"This is a triggered mana ability.\" that do not have multiple faces.",
+    "gold_sql": "SELECT COUNT(T1.id) FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid INNER JOIN rulings AS T3 ON T1.uuid = T3.uuid WHERE T2.format = 'premodern' AND T3.text = 'This is a triggered mana ability.' AND T1.Side IS NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT uuid) \nFROM legalities \nJOIN rulings ON legalities.uuid = rulings.uuid \nJOIN cards ON rulings.uuid = cards.uuid \nWHERE legalities.format = 'premodern' \nAND rulings.text = 'This is a triggered mana ability.' \nAND cards.otherFaceIds IS NULL",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "otherFaceIds가 아니라 cards.side 컬럼으로 판단해야 해. 그리고 COUNT는 uuid 말고 id로 세야 해.",
+        "sql": "SELECT COUNT(DISTINCT cards.id) \nFROM legalities \nJOIN rulings ON legalities.uuid = rulings.uuid \nJOIN cards ON rulings.uuid = cards.uuid \nWHERE legalities.format = 'premodern' \nAND rulings.text = 'This is a triggered mana ability.' \nAND cards.side IS NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 440,
+    "question": "Which foreign language used by \"A Pedra Fellwar\"?",
+    "gold_sql": "SELECT DISTINCT language FROM foreign_data WHERE name = 'A Pedra Fellwar'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT language FROM foreign_data WHERE uuid = (SELECT uuid FROM cards WHERE name = 'A Pedra Fellwar')",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "foreign_data 테이블에도 name 컬럼이 있어. cards랑 조인하지 말고 foreign_data.name = 'A Pedra Fellwar'로 직접 찾으면 돼. DISTINCT도 붙여야 해.",
+        "sql": "SELECT DISTINCT language FROM foreign_data WHERE name = 'A Pedra Fellwar'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 480,
+    "question": "What is the Italian flavor text of the card \"Ancestor's Chosen\"?",
+    "gold_sql": "SELECT T2.flavorText FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T2.uuid = T1.uuid WHERE T1.name = 'Ancestor''s Chosen' AND T2.language = 'Italian'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT flavorText FROM foreign_data WHERE language = 'Italian' AND name = 'Ancestor''s Chosen'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "foreign_data.name은 그 나라 언어로 번역된 이름이라, \"Ancestor's Chosen\"(원래 영어 이름)은 거기서 못 찾아. cards 테이블에서 name='Ancestor's Chosen'인 카드 찾은 다음, uuid로 foreign_data랑 조인해서 language='Italian'인 행을 찾아야 해.",
+        "sql": "SELECT fd.flavorText \nFROM foreign_data fd \nJOIN cards c ON fd.uuid = c.uuid \nWHERE c.name = 'Ancestor''s Chosen' AND fd.language = 'Italian'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 407,
+    "question": "Lists all types of cards in German.",
+    "gold_sql": "SELECT T1.subtypes, T1.supertypes FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T2.language = 'German' AND T1.subtypes IS NOT NULL AND T1.supertypes IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT subtypes, supertypes \nFROM cards \nJOIN foreign_data ON cards.uuid = foreign_data.uuid \nWHERE foreign_data.language = 'German' \nAND (subtypes IS NOT NULL OR supertypes IS NOT NULL)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "DISTINCT 빼야 해. 조건도 OR가 아니라 AND로 (둘 다 NOT NULL이어야 함).",
+        "sql": "SELECT subtypes, supertypes \nFROM cards \nJOIN foreign_data ON cards.uuid = foreign_data.uuid \nWHERE foreign_data.language = 'German' \nAND subtypes IS NOT NULL \nAND supertypes IS NOT NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 487,
+    "question": "What is the percentage of incredibly powerful cards in the set Coldsnap?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T1.cardKingdomFoilId IS NOT NULL AND T1.cardKingdomId IS NOT NULL THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T2.name = 'Coldsnap'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    CAST(SUM(CASE WHEN cardKingdomFoilId IS NOT NULL AND cardKingdomId IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) / \n    COUNT(*) * 100 AS percentage_incredibly_powerful\nFROM \n    cards\nWHERE \n    setCode = (SELECT code FROM sets WHERE name = 'Coldsnap')",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 379,
+    "question": "What are the cards belong to duel deck a? List the ID.",
+    "gold_sql": "SELECT id FROM cards WHERE duelDeck = 'a'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT id FROM cards WHERE duelDeck = 'a'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 483,
+    "question": "Please list the Italian text ruling of all the cards in the set Coldsnap.",
+    "gold_sql": "SELECT DISTINCT T1.text FROM foreign_data AS T1 INNER JOIN cards AS T2 ON T2.uuid = T1.uuid INNER JOIN sets AS T3 ON T3.code = T2.setCode WHERE T3.name = 'Coldsnap' AND T1.language = 'Italian'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT r.text \nFROM rulings r \nJOIN cards c ON r.uuid = c.uuid \nJOIN sets s ON c.setCode = s.code \nWHERE s.name = 'Coldsnap' AND r.language = 'Italian'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "rulings 말고 foreign_data 테이블을 써야 해 (language 컬럼은 거기 있어). DISTINCT도 붙여야 해.",
+        "sql": "SELECT DISTINCT fd.text \nFROM foreign_data fd \nJOIN cards c ON fd.uuid = c.uuid \nJOIN sets s ON c.setCode = s.code \nWHERE s.name = 'Coldsnap' AND fd.language = 'Italian'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 347,
+    "question": "Find all cards illustrated by Stephen Daniel and describe the text of the ruling of these cards. State if these cards have missing or degraded properties and values.",
+    "gold_sql": "SELECT T1.id, T2.text, T1.hasContentWarning FROM cards AS T1 INNER JOIN rulings AS T2 ON T1.uuid = T2.uuid WHERE T1.artist = 'Stephen Daniele'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.id, r.text, \n       CASE \n           WHEN c.hasContentWarning = 1 THEN 'Missing or degraded properties and values' \n           ELSE 'No missing or degraded properties and values' \n       END AS property_status\nFROM cards c\nJOIN rulings r ON c.uuid = r.uuid\nWHERE c.artist = 'Stephen Daniele'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "CASE로 텍스트 변환하지 말고 hasContentWarning 값(0/1)을 그대로 반환해야 해.",
+        "sql": "SELECT c.id, r.text, c.hasContentWarning\nFROM cards c\nJOIN rulings r ON c.uuid = r.uuid\nWHERE c.artist = 'Stephen Daniele'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 469,
+    "question": "Did the set of cards with \"Angel of Mercy\" appear on Magic: The Gathering Online?",
+    "gold_sql": "SELECT IIF(T2.mtgoCode IS NOT NULL, 'YES', 'NO') FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T1.name = 'Angel of Mercy'",
+    "final_correct": false,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT s.name \nFROM cards c \nJOIN sets s ON c.setCode = s.code \nWHERE c.name = 'Angel of Mercy' AND s.mtgoCode IS NOT NULL",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "set name이 아니라 mtgoCode가 NULL인지 여부를 'YES'/'NO'로 반환해야 해. WHERE에 mtgoCode 조건 넣지 말고, SELECT 안에서 IIF로 판단해.",
+        "sql": "SELECT IIF(s.mtgoCode IS NOT NULL, 'YES', 'NO') AS appears_on_mtgo\nFROM cards c \nJOIN sets s ON c.setCode = s.code \nWHERE c.name = 'Angel of Mercy'\nLIMIT 1",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "question_id": 415,
+    "question": "What percentage of cards with format commander and legal status do not have a content warning?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T1.hasContentWarning = 0 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.format = 'commander' AND T2.status = 'Legal'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    CAST(COUNT(CASE WHEN l.status = 'legal' AND l.format = 'commander' AND c.hasContentWarning = 0 THEN 1 END) AS FLOAT) / \n    COUNT(CASE WHEN l.status = 'legal' AND l.format = 'commander' THEN 1 END) * 100 AS percentage\nFROM \n    cards c\nJOIN \n    legalities l ON c.uuid = l.uuid",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "status 값은 소문자 'legal'이 아니라 대문자 'Legal'로 저장되어 있어. 그리고 WHERE절로 먼저 format='commander' AND status='Legal' 필터링한 다음, 그 안에서 SUM(CASE...)/COUNT(id)로 계산해야 해.",
+        "sql": "SELECT \n    SUM(CASE WHEN c.hasContentWarning = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(c.id) AS percentage\nFROM \n    cards c\nJOIN \n    legalities l ON c.uuid = l.uuid\nWHERE \n    l.format = 'commander' AND l.status = 'Legal'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 377,
+    "question": "How many cards with original type of \"Summon - Angel\" have subtype other than \"Angel\"?",
+    "gold_sql": "SELECT COUNT(id) FROM cards WHERE originalType = 'Summon - Angel' AND subtypes != 'Angel'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) \nFROM cards \nWHERE originalType = 'Summon - Angel' \nAND subtypes NOT LIKE '%Angel%'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "subtypes NOT LIKE '%Angel%' 말고 subtypes != 'Angel'로 정확히 일치 비교해야 해.",
+        "sql": "SELECT COUNT(*) \nFROM cards \nWHERE originalType = 'Summon - Angel' \nAND subtypes != 'Angel'",
+        "correct": true
+      }
+    ]
+  }
+]

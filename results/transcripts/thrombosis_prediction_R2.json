@@ -1,0 +1,219 @@
+[
+  {
+    "question_id": 1153,
+    "question": "What is the disease patient '30609' diagnosed with. List all the date of laboratory tests done for this patient.",
+    "gold_sql": "SELECT T1.Diagnosis, T2.Date FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.ID = 30609",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT L.Date, P.Diagnosis\nFROM Laboratory L\nJOIN Patient P ON L.ID = P.ID\nWHERE P.ID = 30609",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "SELECT 순서를 Diagnosis 먼저, Date를 그 다음에 오도록 바꿔야 해.",
+        "sql": "SELECT P.Diagnosis, L.Date\nFROM Laboratory L\nJOIN Patient P ON L.ID = P.ID\nWHERE P.ID = 30609",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1235,
+    "question": "What are the patient's diagnosis for those who has lower red blood blood cell? State their ID and age.",
+    "gold_sql": "SELECT DISTINCT T1.Diagnosis, T1.ID , STRFTIME('%Y', CURRENT_TIMESTAMP) -STRFTIME('%Y', T1.Birthday) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.RBC < 3.5",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT Patient.ID, (strftime('%Y', 'now') - strftime('%Y', Patient.Birthday)) AS Age, Patient.Diagnosis\nFROM Patient\nJOIN Laboratory ON Patient.ID = Laboratory.ID\nWHERE Laboratory.RBC < 3.5",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "DISTINCT 빠졌고, 컬럼 순서도 Diagnosis, ID, Age 순으로 바꿔야 해.",
+        "sql": "SELECT DISTINCT Patient.Diagnosis, Patient.ID, (strftime('%Y', 'now') - strftime('%Y', Patient.Birthday)) AS Age\nFROM Patient\nJOIN Laboratory ON Patient.ID = Laboratory.ID\nWHERE Laboratory.RBC < 3.5",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1162,
+    "question": "How many female patients who came at the hospital in 1997 was immediately followed at the outpatient clinic?",
+    "gold_sql": "SELECT COUNT(*) FROM Patient WHERE STRFTIME('%Y', Description) = '1997' AND SEX = 'F' AND Admission = '-'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT ID) \nFROM Patient \nWHERE SEX = 'F' \nAND STRFTIME('%Y', Description) = '1997' \nAND Admission = '-'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1267,
+    "question": "Among the patients with normal anti-SM, how many of them does not have thrombosis?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Examination AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.SM IN ('negative','0') AND T1.Thrombosis = 0",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT P.ID) \nFROM Patient P \nJOIN Laboratory L ON P.ID = L.ID \nWHERE L.SM IN ('-', '+-') AND P.ID NOT IN (SELECT ID FROM Examination WHERE Thrombosis = 1)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "SM 컬럼은 'negative'/'0'/'1'로 저장돼 있어. normal anti-SM은 SM IN ('negative', '0')로 써야 해. 그리고 NOT IN 서브쿼리 말고, Examination 테이블에서 Thrombosis = 0 조건으로 직접 조인해서 세야 해.",
+        "sql": "SELECT COUNT(DISTINCT P.ID) \nFROM Patient P \nJOIN Laboratory L ON P.ID = L.ID \nJOIN Examination E ON P.ID = E.ID \nWHERE L.SM IN ('negative', '0') AND E.Thrombosis = 0",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "Patient 테이블은 필요 없어. Examination이랑 Laboratory만 조인하면 돼. 그리고 여기선 DISTINCT 빼고 그냥 COUNT(ID)로 세야 해.",
+        "sql": "SELECT COUNT(E.ID) \nFROM Examination E \nJOIN Laboratory L ON E.ID = L.ID \nWHERE L.SM IN ('negative', '0') AND E.Thrombosis = 0",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1225,
+    "question": "List and group all patients by sex for total bilirubin (T-BIL) level not within the normal range.",
+    "gold_sql": "SELECT T1.ID,T1.SEX FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.`T-BIL` >= 2.0 GROUP BY T1.SEX,T1.ID",
+    "final_correct": false,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT SEX, GROUP_CONCAT(DISTINCT Patient.ID) AS PatientIDs\nFROM Patient\nJOIN Laboratory ON Patient.ID = Laboratory.ID\nWHERE `T-BIL` >= 2.0\nGROUP BY SEX",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "GROUP_CONCAT 쓰지 말고 그냥 ID, SEX 컬럼만 SELECT해서 SEX, ID로 GROUP BY 해.",
+        "sql": "SELECT SEX, ID\nFROM Patient\nJOIN Laboratory ON Patient.ID = Laboratory.ID\nWHERE `T-BIL` >= 2.0\nGROUP BY SEX, ID",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "SELECT 순서를 ID, SEX로 바꿔야 해.",
+        "sql": "SELECT ID, SEX\nFROM Patient\nJOIN Laboratory ON Patient.ID = Laboratory.ID\nWHERE `T-BIL` >= 2.0\nGROUP BY ID, SEX",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "question_id": 1192,
+    "question": "List all patients who were followed up at the outpatient clinic who underwent a laboratory test in October 1991 and had a total blood bilirubin level within the normal range.",
+    "gold_sql": "SELECT DISTINCT T1.ID FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.Admission = '-' AND T2.`T-BIL` < 2.0 AND T2.Date LIKE '1991-10-%'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT P.ID\nFROM Patient P\nJOIN Laboratory L ON P.ID = L.ID\nWHERE P.Admission = '-'\n  AND L.Date LIKE '1991-10%'\n  AND L.`T-BIL` < 2.0",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1157,
+    "question": "For patients with severe degree of thrombosis, list their ID, sex and disease the patient is diagnosed with.",
+    "gold_sql": "SELECT DISTINCT T1.ID, T1.SEX, T1.Diagnosis FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T2.Thrombosis = 2",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT Patient.ID, Patient.SEX, Patient.Diagnosis\nFROM Patient\nJOIN Examination ON Patient.ID = Examination.ID\nWHERE Examination.Thrombosis = 2",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1152,
+    "question": "What is the ratio of outpatient to inpatient followed up treatment among all the 'SLE' diagnosed patient?",
+    "gold_sql": "SELECT SUM(CASE WHEN Admission = '+' THEN 1.0 ELSE 0 END) / SUM(CASE WHEN Admission = '-' THEN 1 ELSE 0 END) FROM Patient WHERE Diagnosis = 'SLE'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    CAST(COUNT(CASE WHEN Admission = '+' THEN ID END) AS REAL) / \n    NULLIF(COUNT(CASE WHEN Admission = '-' THEN ID END), 0) AS ratio\nFROM \n    Patient\nWHERE \n    Diagnosis = 'SLE'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1231,
+    "question": "For patient born between 1936-1956, how many male patients have creatinine phosphokinase beyond the normal range?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE STRFTIME('%Y', T1.Birthday) BETWEEN '1936' AND '1956' AND T1.SEX = 'M' AND T2.CPK >= 250",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT P.ID) \nFROM Patient P \nJOIN Laboratory L ON P.ID = L.ID \nWHERE STRFTIME('%Y', P.Birthday) BETWEEN '1936' AND '1956' \nAND P.SEX = 'M' \nAND L.CPK >= 250",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1169,
+    "question": "What is the ratio of male to female patients among all those with abnormal uric acid counts?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T2.UA <= 8.0 AND T1.SEX = 'M' THEN 1 ELSE 0 END) AS REAL) / SUM(CASE WHEN T2.UA <= 6.5 AND T1.SEX = 'F' THEN 1 ELSE 0 END) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    (SUM(CASE WHEN P.SEX = 'M' AND L.UA <= 8.0 THEN 1 ELSE 0 END) * 1.0) / \n    NULLIF(SUM(CASE WHEN P.SEX = 'F' AND L.UA <= 6.5 THEN 1 ELSE 0 END), 0) AS male_to_female_ratio\nFROM \n    Patient P\nJOIN \n    Laboratory L ON P.ID = L.ID",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1209,
+    "question": "Please provide the diagnosis of patients with ALT glutamic pylvic transaminase beyond the normal range by ascending order of their date of birth.",
+    "gold_sql": "SELECT DISTINCT T1.Diagnosis FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.GPT > 60 ORDER BY T1.Birthday ASC",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT P.Diagnosis\nFROM Patient P\nJOIN Laboratory L ON P.ID = L.ID\nWHERE L.GPT > 60\nORDER BY P.Birthday ASC",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1275,
+    "question": "Among the patients who has a normal level of anti-centromere and a normal level of anti-SSB, how many of them are male?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.CENTROMEA IN ('negative', '0') AND T2.SSB IN ('negative', '0') AND T1.SEX = 'M'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT p.ID) AS MalePatients\nFROM Patient p\nJOIN Laboratory l ON p.ID = l.ID\nWHERE l.CENTROMEA IN ('-', '+-') AND l.SSB IN ('-', '+-') AND p.SEX = 'M'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "CENTROMEA랑 SSB도 '-'/'+-' 말고 'negative'/'0'으로 값이 저장돼 있어. SM 컬럼이랑 똑같은 인코딩이야.",
+        "sql": "SELECT COUNT(DISTINCT p.ID) AS MalePatients\nFROM Patient p\nJOIN Laboratory l ON p.ID = l.ID\nWHERE l.CENTROMEA IN ('negative', '0') AND l.SSB IN ('negative', '0') AND p.SEX = 'M'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1302,
+    "question": "For the patients with a normal range of creatinine phosphokinase, how many of them have a positive measure of degree of coagulation?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID INNER JOIN Examination AS T3 ON T1.ID = T3.ID WHERE T2.CPK < 250 AND (T3.KCT = '+' OR T3.RVVT = '+' OR T3.LAC = '+')",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT p.ID) \nFROM Patient p \nJOIN Laboratory l ON p.ID = l.ID \nWHERE l.CPK < 250 \nAND (l.KCT = '+' OR l.RVVT = '+' OR l.LAC = '+')",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "KCT, RVVT, LAC는 Laboratory가 아니라 Examination 테이블에 있어. Examination도 조인해야 하고, DISTINCT는 빼야 해.",
+        "sql": "SELECT COUNT(p.ID) \nFROM Patient p \nJOIN Laboratory l ON p.ID = l.ID \nJOIN Examination e ON p.ID = e.ID \nWHERE l.CPK < 250 \nAND (e.KCT = '+' OR e.RVVT = '+' OR e.LAC = '+')",
+        "correct": true
+      }
+    ]
+  }
+]

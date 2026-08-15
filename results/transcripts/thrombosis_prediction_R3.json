@@ -1,0 +1,242 @@
+[
+  {
+    "question_id": 1171,
+    "question": "How many underage patients were examined during the course of the three-year period from 1990 to 1993?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE STRFTIME('%Y', T2.`Examination Date`) BETWEEN '1990' AND '1993' AND STRFTIME('%Y', T2.`Examination Date`) - STRFTIME('%Y', T1.Birthday) < 18",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT p.ID) \nFROM Patient p \nJOIN Examination e ON p.ID = e.ID \nWHERE STRFTIME('%Y', p.Birthday) <= STRFTIME('%Y', '1993-12-31', '-18 years') \nAND STRFTIME('%Y', e.`Examination Date`) BETWEEN '1990' AND '1993'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "나이는 고정된 1993년 기준이 아니라, Examination Date 연도에서 Birthday 연도를 뺀 값이 18보다 작은지로 계산해야 해. 그리고 DISTINCT는 빼야 해.",
+        "sql": "SELECT COUNT(*) \nFROM Patient p \nJOIN Examination e ON p.ID = e.ID \nWHERE (STRFTIME('%Y', e.`Examination Date`) - STRFTIME('%Y', p.Birthday)) < 18 \nAND STRFTIME('%Y', e.`Examination Date`) BETWEEN '1990' AND '1993'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1189,
+    "question": "What number of patients with a degree of thrombosis level 2 and ANA pattern of only S, have a level of anti-Cardiolip in antibody (IgM) 20% higher than average?",
+    "gold_sql": "SELECT COUNT(*) FROM Examination WHERE Thrombosis = 2 AND `ANA Pattern` = 'S' AND `aCL IgM` > (SELECT AVG(`aCL IgM`) * 1.2 FROM Examination WHERE Thrombosis = 2 AND `ANA Pattern` = 'S')",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT e.ID)\nFROM Examination e\nJOIN (\n    SELECT AVG(`aCL IgM`) * 1.2 AS avg_aCL_IgM\n    FROM Examination\n) avg_table ON e.`aCL IgM` > avg_table.avg_aCL_IgM\nWHERE e.Thrombosis = 2 AND e.ANA = 'S'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "컬럼명은 'ANA'가 아니라 'ANA Pattern'이야. 그리고 평균도 전체가 아니라 Thrombosis=2, ANA Pattern='S' 조건 걸린 것들 중에서만 계산해야 해. COUNT(*)로 세고 DISTINCT는 빼.",
+        "sql": "SELECT COUNT(*)\nFROM Examination e\nWHERE e.Thrombosis = 2 AND e.`ANA Pattern` = 'S' AND e.`aCL IgM` > (\n    SELECT AVG(`aCL IgM`) * 1.2\n    FROM Examination\n    WHERE Thrombosis = 2 AND `ANA Pattern` = 'S'\n)",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1185,
+    "question": "For the patient who was born on 1959/2/18, what is the decrease rate for his/her total cholesterol from November to December in 1981?",
+    "gold_sql": "SELECT CAST((SUM(CASE WHEN T2.Date LIKE '1981-11-%' THEN T2.`T-CHO` ELSE 0 END) - SUM(CASE WHEN T2.Date LIKE '1981-12-%' THEN T2.`T-CHO` ELSE 0 END)) AS REAL) / SUM(CASE WHEN T2.Date LIKE '1981-12-%' THEN T2.`T-CHO` ELSE 0 END) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.Birthday = '1959-02-18'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    (SUM(CASE WHEN Date LIKE '1981-11-%' THEN `T-CHO` ELSE 0 END) - \n     SUM(CASE WHEN Date LIKE '1981-12-%' THEN `T-CHO` ELSE 0 END)) / \n    NULLIF(SUM(CASE WHEN Date LIKE '1981-12-%' THEN `T-CHO` ELSE 0 END), 0) AS DecreaseRate\nFROM Laboratory\nWHERE ID IN (SELECT ID FROM Patient WHERE Birthday = '1959-02-18')",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "NULLIF는 필요 없어. 서브쿼리(IN) 말고 Patient랑 직접 JOIN해.",
+        "sql": "SELECT \n    (SUM(CASE WHEN L.Date LIKE '1981-11-%' THEN L.`T-CHO` ELSE 0 END) - \n     SUM(CASE WHEN L.Date LIKE '1981-12-%' THEN L.`T-CHO` ELSE 0 END)) / \n    SUM(CASE WHEN L.Date LIKE '1981-12-%' THEN L.`T-CHO` ELSE 0 END) AS DecreaseRate\nFROM Laboratory L\nJOIN Patient P ON L.ID = P.ID\nWHERE P.Birthday = '1959-02-18'",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "분자를 REAL로 CAST해야 해 (CAST(... AS REAL)). 안 그러면 정수 나눗셈이라 소수점이 날아가.",
+        "sql": "SELECT \n    (CAST(SUM(CASE WHEN L.Date LIKE '1981-11-%' THEN L.`T-CHO` ELSE 0 END) AS REAL) - \n     SUM(CASE WHEN L.Date LIKE '1981-12-%' THEN L.`T-CHO` ELSE 0 END)) / \n    SUM(CASE WHEN L.Date LIKE '1981-12-%' THEN L.`T-CHO` ELSE 0 END) AS DecreaseRate\nFROM Laboratory L\nJOIN Patient P ON L.ID = P.ID\nWHERE P.Birthday = '1959-02-18'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1179,
+    "question": "For the patient who was diagnosed with SLE on 1994/2/19, what was his/her anti-Cardiolipin antibody concentration status on 1993/11/12?",
+    "gold_sql": "SELECT `aCL IgA`, `aCL IgG`, `aCL IgM` FROM Examination WHERE ID IN ( SELECT ID FROM Patient WHERE Diagnosis = 'SLE' AND Description = '1994-02-19' ) AND `Examination Date` = '1993-11-12'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    CASE \n        WHEN `aCL IgM` IS NOT NULL THEN 'present' \n        ELSE 'absent' \n    END AS `aCL_IgM_Status`\nFROM \n    Examination \nWHERE \n    ID IN (\n        SELECT ID \n        FROM Patient \n        WHERE Diagnosis = 'SLE' AND Description = '1994-02-19'\n    ) \n    AND `Examination Date` = '1993-11-12'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "present/absent 판단하지 말고 aCL IgA, aCL IgG, aCL IgM 세 컬럼 값을 그대로 반환해야 해.",
+        "sql": "SELECT \n    `aCL IgA`, \n    `aCL IgG`, \n    `aCL IgM`\nFROM \n    Examination \nWHERE \n    ID IN (\n        SELECT ID \n        FROM Patient \n        WHERE Diagnosis = 'SLE' AND Description = '1994-02-19'\n    ) \n    AND `Examination Date` = '1993-11-12'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1255,
+    "question": "For the patients with an abnormal Ig M level, what is the most common disease they are diagnosed with?",
+    "gold_sql": "SELECT T1.Diagnosis FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.IGM NOT BETWEEN 40 AND 400 GROUP BY T1.Diagnosis ORDER BY COUNT(T1.Diagnosis) DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT Diagnosis\nFROM Laboratory\nJOIN Examination ON Laboratory.ID = Examination.ID\nWHERE IGM <= 40 OR IGM >= 400\nGROUP BY Diagnosis\nORDER BY COUNT(Diagnosis) DESC\nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "Diagnosis는 Examination이 아니라 Patient 테이블에 있어. Examination 말고 Patient랑 Laboratory를 조인해야 해.",
+        "sql": "SELECT P.Diagnosis\nFROM Patient P\nJOIN Laboratory L ON P.ID = L.ID\nWHERE L.IGM <= 40 OR L.IGM >= 400\nGROUP BY P.Diagnosis\nORDER BY COUNT(P.Diagnosis) DESC\nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1242,
+    "question": "For laboratory examinations take in 1984, list all patients below 50 years old with normal platelet level.",
+    "gold_sql": "SELECT DISTINCT T1.ID FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.PLT BETWEEN 100 AND 400 AND STRFTIME('%Y', T2.Date) - STRFTIME('%Y', T1.Birthday) < 50 AND STRFTIME('%Y', T2.Date) = '1984'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT P.ID, P.SEX\nFROM Patient P\nJOIN Laboratory L ON P.ID = L.ID\nWHERE YEAR(L.Date) = '1984'\nAND (STRFTIME('%Y', 'now') - STRFTIME('%Y', P.Birthday)) < 50\nAND L.PLT BETWEEN 100 AND 400",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "YEAR() 대신 STRFTIME('%Y', ...) 써야 해. 그리고 나이는 현재 시각이 아니라 검사 날짜(Date) 기준으로 계산해야 해. SELECT는 ID만, SEX는 빼.",
+        "sql": "SELECT DISTINCT P.ID\nFROM Patient P\nJOIN Laboratory L ON P.ID = L.ID\nWHERE STRFTIME('%Y', L.Date) = '1984'\nAND (STRFTIME('%Y', L.Date) - STRFTIME('%Y', P.Birthday)) < 50\nAND L.PLT BETWEEN 100 AND 400",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1156,
+    "question": "State the ID and age of patient with positive degree of coagulation.",
+    "gold_sql": "SELECT DISTINCT T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T2.RVVT = '+'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT ID, (STRFTIME('%Y', 'now') - STRFTIME('%Y', Birthday)) AS Age\nFROM Examination\nJOIN Patient ON Examination.ID = Patient.ID\nWHERE RVVT = '+'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "DISTINCT 빠졌어.",
+        "sql": "SELECT DISTINCT ID, (STRFTIME('%Y', 'now') - STRFTIME('%Y', Birthday)) AS Age\nFROM Examination\nJOIN Patient ON Examination.ID = Patient.ID\nWHERE RVVT = '+'",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "ID 컬럼이 두 테이블에 다 있어서 모호해. Patient.ID처럼 테이블명을 붙여서 명시해야 해.",
+        "sql": "SELECT DISTINCT Patient.ID, (STRFTIME('%Y', 'now') - STRFTIME('%Y', Birthday)) AS Age\nFROM Examination\nJOIN Patient ON Examination.ID = Patient.ID\nWHERE RVVT = '+'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1265,
+    "question": "How many patients have a normal level of anti-ribonuclear protein and have been admitted to the hospital?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.RNP = 'negative' OR T2.RNP = '0' AND T1.Admission = '+'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT P.ID)\nFROM Patient P\nJOIN Laboratory L ON P.ID = L.ID\nWHERE (L.RNP = 'negative' OR L.RNP = '0') AND P.Admission = '+'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "괄호 빼봐. RNP 조건 두 개를 OR로, 그 뒤에 AND Admission 조건을 그냥 이어 써.",
+        "sql": "SELECT COUNT(DISTINCT P.ID)\nFROM Patient P\nJOIN Laboratory L ON P.ID = L.ID\nWHERE L.RNP = 'negative' OR L.RNP = '0' AND P.Admission = '+'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1149,
+    "question": "Are there more in-patient or outpatient who were male? What is the deviation in percentage?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN Admission = '+' THEN 1 ELSE 0 END) AS REAL) * 100 / SUM(CASE WHEN Admission = '-' THEN 1 ELSE 0 END) FROM Patient WHERE SEX = 'M'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    CASE \n        WHEN COUNT(CASE WHEN Admission = '+' THEN ID END) > COUNT(CASE WHEN Admission = '-' THEN ID END) THEN 'in-patient'\n        ELSE 'outpatient'\n    END AS Type,\n    ABS((COUNT(CASE WHEN Admission = '+' THEN ID END) - COUNT(CASE WHEN Admission = '-' THEN ID END)) * 100.0 / NULLIF(COUNT(CASE WHEN Admission = '-' THEN ID END), 0)) AS Percentage_Deviation\nFROM Patient\nWHERE SEX = 'M'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "어느 쪽이 많은지 텍스트로 판단하지 말고, 그냥 in-patient 비율을 outpatient 비율로 나눈 값(퍼센트)만 반환해. CASE, ABS, NULLIF 다 필요 없어.",
+        "sql": "SELECT \n    (COUNT(CASE WHEN Admission = '+' THEN ID END) * 100.0 / COUNT(CASE WHEN Admission = '-' THEN ID END)) AS Percentage\nFROM Patient\nWHERE SEX = 'M'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1254,
+    "question": "How many patients with a normal Ig A level came to the hospital after 1990/1/1?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.IGA BETWEEN 80 AND 500 AND  strftime('%Y',  T1.`First Date`) > '1990'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) \nFROM Patient \nWHERE IGA > 80 AND IGA < 500 AND STRFTIME('%Y', `First Date`) >= '1990'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "IGA는 Patient가 아니라 Laboratory 테이블에 있어. Laboratory랑 조인해야 하고, 연도 비교는 >=가 아니라 >로 써야 해.",
+        "sql": "SELECT COUNT(*) \nFROM Laboratory \nJOIN Patient ON Laboratory.ID = Patient.ID \nWHERE IGA > 80 AND IGA < 500 AND STRFTIME('%Y', `First Date`) > '1990'",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "IGA 조건이 여전히 안 맞을 수 있어. 초과/미만이 아니라 80 이상 500 이하(BETWEEN 80 AND 500)로 써야 해.",
+        "sql": "SELECT COUNT(*) \nFROM Laboratory \nJOIN Patient ON Laboratory.ID = Patient.ID \nWHERE IGA BETWEEN 80 AND 500 AND STRFTIME('%Y', `First Date`) > '1990'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1198,
+    "question": "How many female patients were given an APS diagnosis?",
+    "gold_sql": "SELECT COUNT(ID) FROM Patient WHERE SEX = 'F' AND Diagnosis = 'APS'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) \nFROM Patient \nWHERE SEX = 'F' AND Diagnosis = 'APS'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 1187,
+    "question": "How many patients who were examined between 1987/7/6 and 1996/1/31 had a GPT level greater than 30 and an ALB level less than 4? List them by their ID.",
+    "gold_sql": "SELECT DISTINCT ID FROM Laboratory WHERE Date BETWEEN '1987-07-06' AND '1996-01-31' AND GPT > 30 AND ALB < 4",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT L.ID\nFROM Laboratory L\nJOIN Examination E ON L.ID = E.ID\nWHERE L.Date BETWEEN '1987-07-06' AND '1996-01-31'\nAND L.GPT > 30\nAND L.ALB < 4",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "Examination 조인은 필요 없어. Laboratory 하나만 써도 돼.",
+        "sql": "SELECT DISTINCT ID\nFROM Laboratory\nWHERE Date BETWEEN '1987-07-06' AND '1996-01-31'\nAND GPT > 30\nAND ALB < 4",
+        "correct": true
+      }
+    ]
+  }
+]

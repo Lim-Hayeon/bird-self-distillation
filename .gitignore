@@ -1,0 +1,13 @@
+# BIRD Mini-Dev 원본 데이터 (용량 큼, 각자 로컬에 배치)
+data/
+
+# 실험 산출물 (재생성 가능, 필요시 개별적으로 커밋)
+results/*.json
+split_output/*.json
+
+# 환경/캐시
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+.env

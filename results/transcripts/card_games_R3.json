@@ -1,0 +1,219 @@
+[
+  {
+    "question_id": 371,
+    "question": "What is the percentage of cards whose language is French among the Story Spotlight cards?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T2.language = 'French' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T1.isStorySpotlight = 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    CAST(COUNT(CASE WHEN fd.language = 'French' THEN 1 END) AS REAL) / COUNT(*) * 100 AS percentage\nFROM \n    cards c\nJOIN \n    foreign_data fd ON c.uuid = fd.uuid\nWHERE \n    c.isStorySpotlight = 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 474,
+    "question": "Among the sets of cards that have an Italian translation, how many of them have a base set number of under 100?",
+    "gold_sql": "SELECT COUNT(T1.id) FROM sets AS T1 INNER JOIN set_translations AS T2 ON T2.setCode = T1.code WHERE T2.translation IS NOT NULL AND T1.baseSetSize < 100 AND T2.language = 'Italian'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT s.id) \nFROM sets s \nJOIN set_translations st ON s.code = st.setCode \nWHERE st.language = 'Italian' AND st.translation IS NOT NULL AND s.baseSetSize < 100",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 412,
+    "question": "What is the foreign name of the card in French of type Creature, normal layout and black border color, by artist Matthew D. Wilson?",
+    "gold_sql": "SELECT name FROM foreign_data WHERE uuid IN ( SELECT uuid FROM cards WHERE types = 'Creature' AND layout = 'normal' AND borderColor = 'black' AND artist = 'Matthew D. Wilson' ) AND language = 'French'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT fd.name \nFROM foreign_data fd \nJOIN cards c ON fd.uuid = c.uuid \nWHERE fd.language = 'French' \n  AND c.type = 'Creature' \n  AND c.layout = 'normal' \n  AND c.borderColor = 'black' \n  AND c.artist = 'Matthew D. Wilson'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "컬럼명이 type이 아니라 types(복수형)야. DISTINCT는 빼야 해.",
+        "sql": "SELECT fd.name \nFROM foreign_data fd \nJOIN cards c ON fd.uuid = c.uuid \nWHERE fd.language = 'French' \n  AND c.types = 'Creature' \n  AND c.layout = 'normal' \n  AND c.borderColor = 'black' \n  AND c.artist = 'Matthew D. Wilson'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 383,
+    "question": "How many of the banned cards are white border?",
+    "gold_sql": "SELECT COUNT(T1.id) FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.status = 'Banned' AND T1.borderColor = 'white'",
+    "final_correct": false,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(id) \nFROM cards \nWHERE borderColor = 'white' AND uuid IN (SELECT uuid FROM legalities WHERE status = 'Banned')",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "question_id": 522,
+    "question": "Which cards are ranked 1st on EDHRec? List all of the cards name and its banned play format.",
+    "gold_sql": "SELECT T1.name, T2.format FROM cards AS T1 INNER JOIN legalities AS T2 ON T2.uuid = T1.uuid WHERE T1.edhrecRank = 1 AND T2.status = 'Banned' GROUP BY T1.name, T2.format",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.name, l.format \nFROM cards c \nJOIN legalities l ON c.uuid = l.uuid \nWHERE c.edhrecRank = 1 AND l.status = 'Banned'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "GROUP BY name, format을 추가해야 해 (중복 제거 목적).",
+        "sql": "SELECT c.name, l.format \nFROM cards c \nJOIN legalities l ON c.uuid = l.uuid \nWHERE c.edhrecRank = 1 AND l.status = 'Banned' \nGROUP BY c.name, l.format",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 427,
+    "question": "What languages are available in the set known as Archenemy on the magic card market and having the code ARC?",
+    "gold_sql": "SELECT T2.language FROM sets AS T1 INNER JOIN set_translations AS T2 ON T1.code = T2.setCode WHERE T1.mcmName = 'Archenemy' AND T2.setCode = 'ARC'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT set_translations.language \nFROM sets \nJOIN set_translations ON sets.code = set_translations.setCode \nWHERE sets.mcmName = 'Archenemy' AND sets.code = 'ARC'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 345,
+    "question": "For artifact type of cards that do not have multiple faces on the same card, state its legalities status for vintage play format.",
+    "gold_sql": "SELECT DISTINCT T2.status FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T1.type = 'Artifact' AND T2.format = 'vintage' AND T1.side IS NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT l.status\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.type = 'Artifact' AND c.side IS NULL AND l.format = 'vintage'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "DISTINCT를 추가해야 해.",
+        "sql": "SELECT DISTINCT l.status\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.type = 'Artifact' AND c.side IS NULL AND l.format = 'vintage'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 414,
+    "question": "What language is the set of 180 cards that belongs to the Ravnica block translated into?",
+    "gold_sql": "SELECT T2.language FROM sets AS T1 INNER JOIN set_translations AS T2 ON T1.code = T2.setCode WHERE T1.block = 'Ravnica' AND T1.baseSetSize = 180",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT st.language \nFROM sets s \nJOIN set_translations st ON s.code = st.setCode \nWHERE s.baseSetSize = 180 AND s.block = 'Ravnica'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 484,
+    "question": "Please list the Italian names of the cards in the set Coldsnap with the highest converted mana cost.",
+    "gold_sql": "SELECT T2.name FROM foreign_data AS T1 INNER JOIN cards AS T2 ON T2.uuid = T1.uuid INNER JOIN sets AS T3 ON T3.code = T2.setCode WHERE T3.name = 'Coldsnap' AND T1.language = 'Italian' ORDER BY T2.convertedManaCost DESC",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT fd.name\nFROM foreign_data fd\nJOIN cards c ON fd.uuid = c.uuid\nJOIN sets s ON c.setCode = s.code\nWHERE s.name = 'Coldsnap' AND fd.language = 'Italian' AND c.convertedManaCost = (\n    SELECT MAX(convertedManaCost)\n    FROM cards\n    WHERE setCode = s.code\n)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "DISTINCT는 빼야 해. 그리고 MAX 서브쿼리로 필터링하지 말고, convertedManaCost 기준으로 내림차순 정렬만 해줘 (LIMIT 없이 전체 반환).",
+        "sql": "SELECT fd.name\nFROM foreign_data fd\nJOIN cards c ON fd.uuid = c.uuid\nJOIN sets s ON c.setCode = s.code\nWHERE s.name = 'Coldsnap' AND fd.language = 'Italian'\nORDER BY c.convertedManaCost DESC",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "name은 fd.name이 아니라 c.name(cards 테이블의 이름)으로 SELECT해야 해.",
+        "sql": "SELECT c.name\nFROM foreign_data fd\nJOIN cards c ON fd.uuid = c.uuid\nJOIN sets s ON c.setCode = s.code\nWHERE s.name = 'Coldsnap' AND fd.language = 'Italian'\nORDER BY c.convertedManaCost DESC",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 356,
+    "question": "How many cards have infinite power?",
+    "gold_sql": "SELECT COUNT(*) FROM cards WHERE power = '*'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(id) AS infinite_power_count \nFROM cards \nWHERE power = '*'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 530,
+    "question": "List all the frame styles and cards Allen Williams worked on and find any banned cards if there are any.",
+    "gold_sql": "SELECT DISTINCT T1.frameVersion, T1.name , IIF(T2.status = 'Banned', T1.name, 'NO') FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T1.artist = 'Allen Williams'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT c.frameVersion, c.name\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.artist = 'Allen Williams' AND l.status = 'Banned'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "WHERE에 status='Banned' 조건 걸지 말고 Allen Williams 카드 전체를 가져와. SELECT에 컬럼 하나 더 추가해서, status가 'Banned'면 카드 이름을, 아니면 'NO'를 반환하는 IIF문을 넣어야 해.",
+        "sql": "SELECT DISTINCT c.frameVersion, c.name, IIF(l.status = 'Banned', c.name, 'NO') AS banned_card\nFROM cards c\nLEFT JOIN legalities l ON c.uuid = l.uuid\nWHERE c.artist = 'Allen Williams'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 358,
+    "question": "What is the border color of card \"Ancestor's Chosen\"?",
+    "gold_sql": "SELECT DISTINCT borderColor FROM cards WHERE name = 'Ancestor''s Chosen'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT borderColor FROM cards WHERE name = 'Ancestor''s Chosen'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "DISTINCT를 추",
+        "sql": "SELECT DISTINCT borderColor FROM cards WHERE name = 'Ancestor''s Chosen'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": 473,
+    "question": "Is the set of cards with Adarkar Valkyrie only available outside the United States?",
+    "gold_sql": "SELECT IIF(isForeignOnly = 1, 'YES', 'NO') FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T1.name = 'Adarkar Valkyrie'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT sets.isForeignOnly \nFROM cards \nJOIN sets ON cards.setCode = sets.code \nWHERE cards.name = 'Adarkar Valkyrie' AND sets.isForeignOnly = 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "WHERE에 isForeignOnly=1 조건 걸지 말고, SELECT 안에서 IIF로 'YES'/'NO' 반환해야 해.",
+        "sql": "SELECT IIF(sets.isForeignOnly = 1, 'YES', 'NO') AS isOnlyOutsideUS\nFROM cards \nJOIN sets ON cards.setCode = sets.code \nWHERE cards.name = 'Adarkar Valkyrie'",
+        "correct": true
+      }
+    ]
+  }
+]
