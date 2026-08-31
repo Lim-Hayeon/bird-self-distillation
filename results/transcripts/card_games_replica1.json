@@ -1,0 +1,593 @@
+[
+  {
+    "question_id": "465_rep1",
+    "question": "Among the sets that contain a card named \"Sol Ring\", is there a Japanese translation available for the set name?",
+    "gold_sql": "SELECT IIF(SUM(CASE WHEN T2.language = 'Japanese' AND T2.translation IS NOT NULL THEN 1 ELSE 0 END) > 0, 'YES', 'NO') FROM cards AS T1 INNER JOIN set_translations AS T2 ON T2.setCode = T1.setCode WHERE T1.name = 'Sol Ring'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT IIF(SUM(CASE WHEN T2.language = 'Japanese' AND T2.translation IS NOT NULL THEN 1 ELSE 0 END) > 0, 'YES', 'NO') \nFROM sets AS T1 \nINNER JOIN cards AS T2 ON T1.code = T2.setCode \nWHERE T2.name = 'Sol Ring'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "세트 이름 번역 정보(`language`, `translation`)는 `sets`나 `cards` 테이블이 아닌 `set_translations` 테이블에 저장되어 있습니다. `sets` 테이블 조인 대신 `cards` 테이블과 `set_translations` 테이블을 `setCode` 기준으로 조인하여 결과를 확인하도록 쿼리를 수정하세요.",
+        "sql": "SELECT IIF(SUM(CASE WHEN T2.language = 'Japanese' AND T2.translation IS NOT NULL THEN 1 ELSE 0 END) > 0, 'YES', 'NO') \nFROM cards AS T1 \nINNER JOIN set_translations AS T2 ON T1.setCode = T2.setCode \nWHERE T1.name = 'Sol Ring'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "459_rep1",
+    "question": "Between \"Llanowar Elves\" and \"Shivan Dragon\", which card has the higher converted mana cost?",
+    "gold_sql": "SELECT name FROM cards WHERE name IN ('Llanowar Elves', 'Shivan Dragon') ORDER BY convertedManaCost DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT name FROM cards WHERE name IN ('Llanowar Elves', 'Shivan Dragon') ORDER BY convertedManaCost DESC LIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "477_rep1",
+    "question": "Limited Edition Alpha 세트에 카드를 디자인한 아티스트는 다음 중 누구인가요: Mark Poole, Richard Thomas, Anson Maddocks?",
+    "gold_sql": "SELECT T1.artist FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE (T2.name = 'Limited Edition Alpha' AND T1.artist = 'Mark Poole') OR (T2.name = 'Limited Edition Alpha' AND T1.artist = 'Richard Thomas') OR (T2.name = 'Limited Edition Alpha' AND T1.artist = 'Anson Maddocks') GROUP BY T1.artist",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT artist \nFROM cards \nWHERE artist IN ('Mark Poole', 'Richard Thomas', 'Anson Maddocks') \nAND uuid IN (SELECT uuid FROM sets WHERE name = 'Limited Edition Alpha')",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "408_rep1",
+    "question": "How many common or uncommon cards have rulings that mention combat damage?",
+    "gold_sql": "SELECT Count(DISTINCT T1.id) FROM cards AS T1 INNER JOIN rulings AS T2 ON T1.uuid = T2.uuid WHERE (T1.rarity = 'common' OR T1.rarity = 'uncommon') AND T2.text LIKE '%combat damage%'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT T1.id) \nFROM cards AS T1 \nINNER JOIN rulings AS T2 ON T1.uuid = T2.uuid \nWHERE T1.rarity IN ('common', 'uncommon') AND T2.text LIKE '%combat damage%'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "341_rep1",
+    "question": "Which black-bordered cards have no Magic Online foil identifier or no TCGplayer product listing?",
+    "gold_sql": "SELECT id FROM cards WHERE borderColor = 'black' AND (mtgoFoilId IS NULL OR tcgplayerProductId IS NULL)",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT name FROM cards WHERE borderColor = 'black' AND (mtgoFoilId IS NULL OR tcgplayerProductId IS NULL)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`SELECT` 절에서 카드 이름(`name`) 대신 카드의 식별자(`id`)를 조회하도록 출력 컬럼을 수정하세요.",
+        "sql": "SELECT id FROM cards WHERE borderColor = 'black' AND (mtgoFoilId IS NULL OR tcgplayerProductId IS NULL)",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "368_rep1",
+    "question": "What percentage of cards are available in foil?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN hasFoil = 1 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(id) FROM cards",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(COUNT(CASE WHEN hasFoil = 1 THEN 1 END) AS REAL) * 100 / COUNT(id) AS percentage FROM cards",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "391_rep1",
+    "question": "Which blue rare cards have entries in the foreign-language data?",
+    "gold_sql": "SELECT DISTINCT T1.name FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T1.rarity = 'rare' AND T1.colors = 'U'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT c.name \nFROM cards c \nINNER JOIN foreign_data f ON c.uuid = f.uuid \nWHERE c.colors = 'U' AND c.rarity = 'rare'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "349_rep1",
+    "question": "Identify a card and its artist that has ruling records, where the artist has the largest number of distinct cards that are not online-only. Also indicate whether the card is online-only.",
+    "gold_sql": "SELECT T1.name, T1.artist, T1.isOnlineOnly FROM cards AS T1 INNER JOIN rulings AS T2 ON T1.uuid = T2.uuid WHERE T1.isOnlineOnly = 0 AND T1.artist = (SELECT artist FROM cards WHERE isOnlineOnly = 0 GROUP BY artist HAVING COUNT(DISTINCT uuid) = (SELECT MAX(count_uuid) FROM ( SELECT COUNT(DISTINCT uuid) AS count_uuid FROM cards WHERE isOnlineOnly = 0 GROUP BY artist ))) LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.name, c.artist, c.isOnlineOnly\nFROM cards c\nJOIN rulings r ON c.uuid = r.uuid\nWHERE c.isOnlineOnly = 0\nGROUP BY c.artist\nHAVING COUNT(DISTINCT c.uuid) = (\n    SELECT MAX(card_count)\n    FROM (\n        SELECT COUNT(DISTINCT uuid) AS card_count\n        FROM cards\n        WHERE isOnlineOnly = 0\n        GROUP BY artist\n    )\n)\nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`rulings` 테이블과 조인한 상태에서 바로 그룹화(`GROUP BY artist`)를 수행하면 결과 및 카운트에 오류가 발생할 수 있습니다. 먼저 `cards` 테이블만 사용한 서브쿼리로 온라인 전용이 아닌(`isOnlineOnly = 0`) 고유 카드 수가 가장 많은 아티스트를 구한 뒤, 메인 쿼리의 조건절에서 `artist = (서브쿼리)` 방식으로 필터링하여 카드 정보(`name`, `artist`, `isOnlineOnly`)를 조회하도록 수정하세요.",
+        "sql": "SELECT c.name, c.artist, c.isOnlineOnly\nFROM cards c\nJOIN rulings r ON c.uuid = r.uuid\nWHERE c.artist = (\n    SELECT artist\n    FROM cards\n    WHERE isOnlineOnly = 0\n    GROUP BY artist\n    ORDER BY COUNT(DISTINCT uuid) DESC\n    LIMIT 1\n)",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "메인 쿼리의 조건절에 온라인 전용이 아닌 카드(`isOnlineOnly = 0`) 필터 조건을 추가하고, 결과가 1건만 조회되도록 메인 쿼리 끝에 `LIMIT 1`을 추가하세요. 또한 아티스트별 고유 카드 수의 최댓값을 구할 때 서브쿼리 내에서 `ORDER BY ... LIMIT 1`을 사용하는 대신, `HAVING` 절과 `MAX()` 서브쿼리를 중첩 활용하여 최대 개수를 가진 아티스트를 필터링하도록 수정하세요.",
+        "sql": "SELECT c.name, c.artist, c.isOnlineOnly\nFROM cards c\nJOIN rulings r ON c.uuid = r.uuid\nWHERE c.isOnlineOnly = 0 AND c.artist IN (\n    SELECT artist\n    FROM cards\n    WHERE isOnlineOnly = 0\n    GROUP BY artist\n    HAVING COUNT(DISTINCT uuid) = (\n        SELECT MAX(card_count)\n        FROM (\n            SELECT COUNT(DISTINCT uuid) AS card_count\n            FROM cards\n            WHERE isOnlineOnly = 0\n            GROUP BY artist\n        )\n    )\n)\nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "424_rep1",
+    "question": "What percentage of cards are promotional cards with common rarity?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN isPromo = 1 AND rarity = 'common' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(*) FROM cards",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN isPromo = 1 AND rarity = 'common' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(id) AS percentage FROM cards",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "462_rep1",
+    "question": "What is the French title of the set containing the card named \"Lightning Bolt\"?",
+    "gold_sql": "SELECT translation FROM set_translations WHERE setCode IN ( SELECT setCode FROM cards WHERE name = 'Lightning Bolt' ) AND language = 'French'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT translation FROM set_translations WHERE setCode IN (SELECT setCode FROM cards WHERE name = 'Lightning Bolt') AND language = 'French'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "402_rep1",
+    "question": "What percentage of all cards are promotional cards that are available in foil?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN isPromo = 1 AND hasFoil = 1 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(id) FROM cards",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(COUNT(CASE WHEN isPromo = 1 AND hasFoil = 1 THEN 1 END) AS REAL) * 100 / COUNT(id) AS percentage FROM cards",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "416_rep1",
+    "question": "Among cards with no toughness value, what percentage have a German entry?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T2.language = 'German' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T1.toughness IS NULL OR T1.toughness = '*'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN T1.toughness IS NULL OR T1.toughness = '*' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.toughness) \nFROM cards AS T1 \nINNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid \nWHERE T2.language = 'German' AND (T1.toughness IS NULL OR T1.toughness = '*')",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`WHERE` 절에서 `T2.language = 'German'` 필터를 제거하여 방어력(toughness) 조건만 남기고, 백분율 분자에서는 독일어 언어 조건(`T2.language = 'German'`)을 체크하는 조건식(`CASE WHEN`)을 적용하세요. 또한, 분모에서는 NULL 값이 집계에서 제외되는 `COUNT(T1.toughness)` 대신 `COUNT(T1.id)`를 사용하여 전체 개수를 올바르게 구하도록 수정하세요.",
+        "sql": "SELECT CAST(SUM(CASE WHEN T2.language = 'German' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) \nFROM cards AS T1 \nINNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid \nWHERE T1.toughness IS NULL OR T1.toughness = '*'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "397_rep1",
+    "question": "What are the mana costs of non-promotional cards with a converted mana cost of 0 that are available in both foil and non-foil versions?",
+    "gold_sql": "SELECT manaCost FROM cards WHERE convertedManaCost = 0 AND hasFoil = 1 AND hasNonFoil = 1 AND isPromo = 0",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT manaCost FROM cards WHERE convertedManaCost = 0 AND hasFoil = 1 AND hasNonFoil = 1 AND isPromo = 0",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "346_rep1",
+    "question": "Show the names and rarities of cards with unspecified toughness that are legal in the modern format.",
+    "gold_sql": "SELECT T1.name, T1.rarity FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.status = 'Legal' AND T2.format = 'modern' AND (T1.toughness IS NULL OR T1.toughness = '*')",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.name, T1.rarity \nFROM cards AS T1 \nINNER JOIN legalities AS T2 ON T1.uuid = T2.uuid \nWHERE (T1.toughness IS NULL OR T1.toughness = '*') \nAND T2.format = 'modern' \nAND T2.status = 'Legal'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "479_rep1",
+    "question": "In the Mirage set, how many cards with a converted mana cost below 2 have unknown toughness?",
+    "gold_sql": "SELECT SUM(CASE WHEN T1.toughness = '*' OR T1.toughness IS NULL THEN 1 ELSE 0 END) FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T2.name = 'Mirage' AND T1.convertedManaCost < 2",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM cards AS T1 INNER JOIN sets AS T2 ON T1.setCode = T2.code WHERE T2.name = 'Mirage' AND T1.convertedManaCost < 2 AND (T1.toughness = '*' OR T1.toughness IS NULL)",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "472_rep1",
+    "question": "How many sets in the \"Mirage\" block have a French translation available?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.id) FROM sets AS T1 INNER JOIN set_translations AS T2 ON T2.setCode = T1.code WHERE T1.block = 'Mirage' AND T2.language = 'French' AND T2.translation IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT s.id) \nFROM sets s \nJOIN set_translations st ON s.code = st.setCode \nWHERE s.block = 'Mirage' AND st.language = 'French' AND st.translation IS NOT NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "409_rep1",
+    "question": "How many card records are available in foil, have a dated ruling, and are legal in at least one format?",
+    "gold_sql": "SELECT COUNT(T1.id) FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid INNER JOIN rulings AS T3 ON T1.uuid = T3.uuid WHERE T1.hasFoil = 1 AND T2.status = 'Legal' AND T3.date IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT T1.id) \nFROM cards AS T1 \nINNER JOIN rulings AS T2 ON T1.uuid = T2.uuid \nINNER JOIN legalities AS T3 ON T1.uuid = T3.uuid \nWHERE T1.hasFoil = 1 AND T2.date IS NOT NULL AND T3.status = 'Legal'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`SELECT` 절에서 `COUNT(DISTINCT T1.id)` 대신 중복 제거 없는 `COUNT(T1.id)`를 사용하여 조건에 부합하는 모든 카드 레코드 수를 집계하도록 수정하세요.",
+        "sql": "SELECT COUNT(T1.id) \nFROM cards AS T1 \nINNER JOIN rulings AS T2 ON T1.uuid = T2.uuid \nINNER JOIN legalities AS T3 ON T1.uuid = T3.uuid \nWHERE T1.hasFoil = 1 AND T2.date IS NOT NULL AND T3.status = 'Legal'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "440_rep1",
+    "question": "In which language is the foreign card named \"L'Anneau solaire\" listed?",
+    "gold_sql": "SELECT DISTINCT language FROM foreign_data WHERE name = 'L''Anneau solaire'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT language FROM foreign_data WHERE name = 'L''Anneau solaire'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "480_rep1",
+    "question": "Provide the French flavor text for the card named \"Serra Angel\".",
+    "gold_sql": "SELECT T2.flavorText FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T2.uuid = T1.uuid WHERE T1.name = 'Serra Angel' AND T2.language = 'French'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T2.flavorText FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T2.uuid = T1.uuid WHERE T1.name = 'Serra Angel' AND T2.language = 'French'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "407_rep1",
+    "question": "Show the names and card types of cards available in French.",
+    "gold_sql": "SELECT T1.name, T1.type FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T2.language = 'French' AND T1.name IS NOT NULL AND T1.type IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT fd.name, c.type \nFROM foreign_data fd \nJOIN cards c ON fd.uuid = c.uuid \nWHERE fd.language = 'French' AND c.name IS NOT NULL AND c.type IS NOT NULL",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`SELECT` 절에서 `foreign_data` 테이블의 이름 대신 `cards` 테이블의 카드 이름(`name`)을 출력하도록 변경하고, `DISTINCT` 키워드를 제거하여 쿼리를 수정하세요.",
+        "sql": "SELECT fd.name, c.type \nFROM foreign_data fd \nJOIN cards c ON fd.uuid = c.uuid \nWHERE fd.language = 'French' AND c.name IS NOT NULL AND c.type IS NOT NULL",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "`SELECT` 절에서 `foreign_data` 테이블의 이름(`fd.name`) 대신 `cards` 테이블의 카드 이름(`c.name`)을 조회하도록 출력 컬럼을 수정하세요.",
+        "sql": "SELECT c.name, c.type \nFROM foreign_data fd \nJOIN cards c ON fd.uuid = c.uuid \nWHERE fd.language = 'French' AND c.name IS NOT NULL AND c.type IS NOT NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "487_rep1",
+    "question": "What percentage of cards in the Zendikar set are available in both foil and non-foil versions?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T1.hasFoil = 1 AND T1.hasNonFoil = 1 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T2.name = 'Zendikar'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN hasFoil = 1 AND hasNonFoil = 1 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(id) \nFROM cards \nWHERE setCode = (SELECT code FROM sets WHERE name = 'Zendikar')",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "379_rep1",
+    "question": "Which cards have a black border? Return their IDs.",
+    "gold_sql": "SELECT id FROM cards WHERE borderColor = 'black'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT id FROM cards WHERE borderColor = 'black'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "483_rep1",
+    "question": "Retrieve the German rules text for every card printed in the Future Sight set.",
+    "gold_sql": "SELECT DISTINCT T1.text FROM foreign_data AS T1 INNER JOIN cards AS T2 ON T2.uuid = T1.uuid INNER JOIN sets AS T3 ON T3.code = T2.setCode WHERE T3.name = 'Future Sight' AND T1.language = 'German'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT fd.text \nFROM foreign_data AS fd \nINNER JOIN cards AS c ON fd.uuid = c.uuid \nINNER JOIN sets AS s ON c.setCode = s.code \nWHERE s.name = 'Future Sight' AND fd.language = 'German'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "347_rep1",
+    "question": "Chris Rahn이 일러스트를 담당한 카드와 해당 카드의 모든 룰링 내용을 찾아주세요. 각 카드가 포일 버전으로 제공되는지도 함께 표시하세요.",
+    "gold_sql": "SELECT T1.id, T2.text, T1.hasFoil FROM cards AS T1 INNER JOIN rulings AS T2 ON T1.uuid = T2.uuid WHERE T1.artist = 'Chris Rahn'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.id, T2.text, T1.hasFoil \nFROM cards AS T1 \nINNER JOIN rulings AS T2 ON T1.uuid = T2.uuid \nWHERE T1.artist = 'Chris Rahn'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "415_rep1",
+    "question": "What percentage of cards that are legal in the modern format do not have a foil version?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T1.hasFoil = 0 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.format = 'modern' AND T2.status = 'Legal'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN T1.hasFoil = 0 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) \nFROM cards AS T1 \nINNER JOIN legalities AS T2 ON T1.uuid = T2.uuid \nWHERE T2.format = 'modern' AND T2.status = 'Legal'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "377_rep1",
+    "question": "What is the number of cards whose original type is \"Summon - Dragon\" but whose subtype is not \"Dragon\"?",
+    "gold_sql": "SELECT COUNT(id) FROM cards WHERE originalType = 'Summon - Dragon' AND subtypes != 'Dragon'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(id) FROM cards WHERE originalType = 'Summon - Dragon' AND subtypes != 'Dragon'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "371_rep1",
+    "question": "Among promotional cards, what percentage have German-language entries?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T2.language = 'German' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN foreign_data AS T2 ON T1.uuid = T2.uuid WHERE T1.isPromo = 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN fd.language = 'German' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) \nFROM cards AS T1 \nLEFT JOIN foreign_data AS fd ON T1.uuid = fd.uuid \nWHERE T1.isPromo = 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`cards` 테이블과 `foreign_data` 테이블을 조인할 때 `LEFT JOIN` 대신 `INNER JOIN`을 사용하도록 수정하세요.",
+        "sql": "SELECT CAST(SUM(CASE WHEN fd.language = 'German' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) \nFROM cards AS T1 \nINNER JOIN foreign_data AS fd ON T1.uuid = fd.uuid \nWHERE T1.isPromo = 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "474_rep1",
+    "question": "How many card sets with a non-null German translation have a base set size smaller than 250?",
+    "gold_sql": "SELECT COUNT(T1.id) FROM sets AS T1 INNER JOIN set_translations AS T2 ON T2.setCode = T1.code WHERE T2.translation IS NOT NULL AND T1.baseSetSize < 250 AND T2.language = 'German'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT T1.id) \nFROM sets AS T1 \nINNER JOIN set_translations AS T2 ON T1.code = T2.setCode \nWHERE T2.language = 'German' AND T2.translation IS NOT NULL AND T1.baseSetSize < 250",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "412_rep1",
+    "question": "What is the Spanish name of the card with type Instant, a normal layout, and a black border, illustrated by Christopher Rush?",
+    "gold_sql": "SELECT name FROM foreign_data WHERE uuid IN ( SELECT uuid FROM cards WHERE types = 'Instant' AND layout = 'normal' AND borderColor = 'black' AND artist = 'Christopher Rush' ) AND language = 'Spanish'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT name FROM foreign_data WHERE uuid IN ( SELECT uuid FROM cards WHERE types = 'Instant' AND layout = 'normal' AND borderColor = 'black' AND artist = 'Christopher Rush' ) AND language = 'Spanish'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "383_rep1",
+    "question": "What is the number of restricted cards with a black border?",
+    "gold_sql": "SELECT COUNT(T1.id) FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.status = 'Restricted' AND T1.borderColor = 'black'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM cards c JOIN legalities l ON c.uuid = l.uuid WHERE l.status = 'Restricted' AND c.borderColor = 'black'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "522_rep1",
+    "question": "Show the names of cards with an EDHRec rank of 2, along with every format in which they are legal.",
+    "gold_sql": "SELECT T1.name, T2.format FROM cards AS T1 INNER JOIN legalities AS T2 ON T2.uuid = T1.uuid WHERE T1.edhrecRank = 2 AND T2.status = 'Legal' GROUP BY T1.name, T2.format",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.name, l.format \nFROM cards c \nINNER JOIN legalities l ON c.uuid = l.uuid \nWHERE c.edhrecRank = 2 AND l.status = 'Legal'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "카드 이름(`name`)과 포맷(`format`) 기준으로 중복 없이 집계되도록 `GROUP BY` 절을 추가하여 쿼리를 수정하세요.",
+        "sql": "SELECT c.name, l.format \nFROM cards c \nINNER JOIN legalities l ON c.uuid = l.uuid \nWHERE c.edhrecRank = 2 AND l.status = 'Legal' \nGROUP BY c.name, l.format",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "427_rep1",
+    "question": "Which languages have translations for the set listed on the Magic Card Market as Battle for Zendikar and identified by the code BFZ?",
+    "gold_sql": "SELECT T2.language FROM sets AS T1 INNER JOIN set_translations AS T2 ON T1.code = T2.setCode WHERE T1.mcmName = 'Battle for Zendikar' AND T1.code = 'BFZ'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT st.language FROM set_translations st JOIN sets s ON st.setCode = s.code WHERE s.mcmName = 'Battle for Zendikar' AND s.code = 'BFZ'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "345_rep1",
+    "question": "For land cards that are part of a card with multiple faces, list the distinct legality statuses in the Modern format.",
+    "gold_sql": "SELECT DISTINCT T2.status FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T1.type = 'Land' AND T2.format = 'modern' AND T1.side IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT T2.status \nFROM cards AS T1 \nINNER JOIN legalities AS T2 ON T1.uuid = T2.uuid \nWHERE T1.types = 'Land' AND T1.side IS NOT NULL AND T2.format = 'modern'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "414_rep1",
+    "question": "Which language is listed for the 145-card set in the Zendikar block?",
+    "gold_sql": "SELECT T2.language FROM sets AS T1 INNER JOIN set_translations AS T2 ON T1.code = T2.setCode WHERE T1.block = 'Zendikar' AND T1.baseSetSize = 145",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT st.language FROM sets s JOIN set_translations st ON s.code = st.setCode WHERE s.baseSetSize = 145",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`WHERE` 절에 젠디카 블록 조건(`block = 'Zendikar'`)을 추가하고, `SELECT` 절에서 `DISTINCT` 키워드를 제거하도록 쿼리를 수정하세요.",
+        "sql": "SELECT st.language FROM sets s JOIN set_translations st ON s.code = st.setCode WHERE s.baseSetSize = 145 AND s.block = 'Zendikar'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "484_rep1",
+    "question": "List the card names from the Ravnica: City of Guilds set that have French entries, ordered from greatest to least converted mana cost.",
+    "gold_sql": "SELECT T2.name FROM foreign_data AS T1 INNER JOIN cards AS T2 ON T2.uuid = T1.uuid INNER JOIN sets AS T3 ON T3.code = T2.setCode WHERE T3.name = 'Ravnica: City of Guilds' AND T1.language = 'French' ORDER BY T2.convertedManaCost DESC",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.name \nFROM cards c \nJOIN sets s ON c.setCode = s.code \nJOIN foreign_data f ON c.uuid = f.uuid \nWHERE s.name = 'Ravnica: City of Guilds' AND f.language = 'French' \nORDER BY c.convertedManaCost DESC",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "356_rep1",
+    "question": "How many cards are marked as promotional cards?",
+    "gold_sql": "SELECT COUNT(*) FROM cards WHERE isPromo = 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM cards WHERE isPromo = 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "530_rep1",
+    "question": "For cards illustrated by Chris Rahn, show each frame version and card name, indicating the card name when its legality status is Banned and NO otherwise.",
+    "gold_sql": "SELECT DISTINCT T1.frameVersion, T1.name, IIF(T2.status = 'Banned', T1.name, 'NO') FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T1.artist = 'Chris Rahn'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.frameVersion, c.name, IIF(l.status = 'Banned', c.name, 'NO') AS legality_status\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.artist = 'Chris Rahn'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`SELECT` 절에 `DISTINCT` 키워드를 추가하여 결과가 중복 없이 출력되도록 쿼리를 수정하세요.",
+        "sql": "SELECT DISTINCT c.frameVersion, c.name, IIF(l.status = 'Banned', c.name, 'NO') AS legality_status\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE c.artist = 'Chris Rahn'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "358_rep1",
+    "question": "What is the rarity of the card \"Black Lotus\"?",
+    "gold_sql": "SELECT DISTINCT rarity FROM cards WHERE name = 'Black Lotus'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT rarity FROM cards WHERE name = 'Black Lotus'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "동일한 카드 이름(\"Black Lotus\")을 가진 데이터가 여러 개 존재하여 중복 결과가 조회될 수 있으므로, `SELECT` 절에 `DISTINCT` 키워드를 추가하여 희귀도(`rarity`)가 중복 없이 출력되도록 수정하세요.",
+        "sql": "SELECT DISTINCT rarity FROM cards WHERE name = 'Black Lotus'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "473_rep1",
+    "question": "Is the set containing Amugaba available in the United States?",
+    "gold_sql": "SELECT IIF(isForeignOnly = 0, 'YES', 'NO') FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T1.name = 'Amugaba'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT s.name \nFROM sets s \nJOIN cards c ON s.code = c.setCode \nWHERE c.name = 'Amugaba' AND s.isForeignOnly = 0",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "질문이 예/아니오 여부를 묻고 있으므로, 세트 이름을 출력하는 대신 `IIF` 조건식을 사용해 `isForeignOnly` 값이 0이면 'YES', 아니면 'NO'를 출력하도록 수정하세요. 또한 `WHERE` 절에서는 `isForeignOnly = 0` 필터 조건을 제거하고 카드 이름(\"Amugaba\") 조건만 남기도록 쿼리를 변경하세요.",
+        "sql": "SELECT IIF(s.isForeignOnly = 0, 'YES', 'NO') AS availability\nFROM sets s \nJOIN cards c ON s.code = c.setCode \nWHERE c.name = 'Amugaba'",
+        "correct": true
+      }
+    ]
+  }
+]

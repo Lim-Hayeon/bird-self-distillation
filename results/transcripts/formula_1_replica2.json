@@ -1,0 +1,760 @@
+[
+  {
+    "question_id": "869_rep2",
+    "question": "In race ID 15, what is the name of the constructor that earned the most points?",
+    "gold_sql": "SELECT T2.name FROM constructorResults AS T1 INNER JOIN constructors AS T2 ON T2.constructorId = T1.constructorId WHERE T1.raceId = 15 ORDER BY T1.points DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.name \nFROM constructorResults cr \nJOIN constructors c ON cr.constructorId = c.constructorId \nWHERE cr.raceId = 15 \nORDER BY cr.points DESC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "894_rep2",
+    "question": "Which driver had the longest pit stop, and at which race did it occur?",
+    "gold_sql": "SELECT T2.milliseconds, T1.forename, T1.surname, T3.name FROM drivers AS T1 INNER JOIN pitStops AS T2 ON T1.driverId = T2.driverId INNER JOIN races AS T3 ON T2.raceId = T3.raceId ORDER BY T2.milliseconds DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.forename, d.surname, r.name \nFROM pitStops ps \nJOIN drivers d ON ps.driverId = d.driverId \nJOIN races r ON ps.raceId = r.raceId \nWHERE ps.milliseconds = (SELECT MAX(milliseconds) FROM pitStops)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "SELECT 절의 가장 앞에 피트 스탑 시간(milliseconds)을 추가하여 피트 스탑 시간, 이름(forename), 성(surname), 레이스 이름(name) 순서로 출력되도록 변경하세요.",
+        "sql": "SELECT ps.milliseconds, d.forename, d.surname, r.name \nFROM pitStops ps \nJOIN drivers d ON ps.driverId = d.driverId \nJOIN races r ON ps.raceId = r.raceId \nWHERE ps.milliseconds = (SELECT MAX(milliseconds) FROM pitStops)",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "963_rep2",
+    "question": "How many German drivers recorded a lap time below 01:40.00?",
+    "gold_sql": "SELECT COUNT(T1.driverId) FROM drivers AS T1 INNER JOIN lapTimes AS T2 ON T1.driverId = T2.driverId WHERE T1.nationality = 'German' AND (CAST(SUBSTR(T2.time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(T2.time, 4, 2) AS INTEGER) + CAST(SUBSTR(T2.time, 7, 2) AS REAL) / 1000) < 100",
+    "final_correct": false,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT d.driverId) \nFROM drivers d \nJOIN lapTimes lt ON d.driverId = lt.driverId \nWHERE d.nationality = 'German' \nAND (CAST(SUBSTR(lt.time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(lt.time, 4, 2) AS INTEGER)) < 100",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "question_id": "971_rep2",
+    "question": "What is the driver reference of the youngest French driver?",
+    "gold_sql": "SELECT driverRef FROM drivers WHERE nationality = 'French' ORDER BY JULIANDAY(dob) DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT driverRef \nFROM drivers \nWHERE nationality = 'French' \nORDER BY dob DESC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "915_rep2",
+    "question": "Among drivers with a recorded nationality, what is the nationality of the driver born earliest?",
+    "gold_sql": "SELECT nationality FROM drivers WHERE nationality IS NOT NULL ORDER BY dob ASC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT nationality FROM drivers WHERE dob IS NOT NULL ORDER BY dob ASC LIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "또한, 서브쿼리로 최댓값을 구하는 대신 피트 스탑 시간(milliseconds) 기준 내림차순 정렬 후 상위 1건만 조회(LIMIT 1)하도록 수정하세요.질문의 '국적이 기록된 드라이버' 조건에 맞추어 생년월일(dob)이 아닌 국적(nationality)이 NULL이 아닌 데이터를 필터링하도록 조건을 변경하세요.",
+        "sql": "SELECT nationality FROM drivers WHERE nationality IS NOT NULL ORDER BY dob ASC LIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1002_rep2",
+    "question": "Among drivers who have a driver standings entry, what are the driver reference, racing code, and date of the race associated with the oldest driver?",
+    "gold_sql": "SELECT T1.driverRef, T1.code, T3.date FROM drivers AS T1 INNER JOIN driverStandings AS T2 ON T1.driverId = T2.driverId INNER JOIN races AS T3 ON T2.raceId = T3.raceId ORDER BY JULIANDAY(T1.dob) ASC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.driverRef, d.code, r.date \nFROM drivers d \nJOIN driverStandings ds ON d.driverId = ds.driverId \nJOIN races r ON ds.raceId = r.raceId \nWHERE d.dob = (SELECT MIN(dob) FROM drivers WHERE dob IS NOT NULL) \nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "서브쿼리로 전체 드라이버 대상 최연장자 생년월일을 구하는 대신, 테이블 조인 후 생년월일(dob)을 일자 단위 변환 함수인 JULIANDAY(dob) 기준으로 오름차순 정렬하여 상위 1건만 조회(LIMIT 1)하도록 수정하세요.",
+        "sql": "SELECT d.driverRef, d.code, r.date \nFROM drivers d \nJOIN driverStandings ds ON d.driverId = ds.driverId \nJOIN races r ON ds.raceId = r.raceId \nORDER BY JULIANDAY(d.dob) ASC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "847_rep2",
+    "question": "For race ID 18, what is the last name of the driver who recorded the quickest time in the first qualifying session?",
+    "gold_sql": "SELECT T2.surname FROM qualifying AS T1 INNER JOIN drivers AS T2 ON T2.driverId = T1.driverId WHERE T1.raceId = 18 ORDER BY T1.q1 ASC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.surname \nFROM qualifying q \nJOIN drivers d ON q.driverId = d.driverId \nWHERE q.raceId = 18 \nORDER BY q.q1 ASC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "930_rep2",
+    "question": "Which Formula 1 races did Sebastian Vettel achieve the top fastest-lap rank in?",
+    "gold_sql": "SELECT name FROM races WHERE raceId IN ( SELECT raceId FROM results WHERE rank = 1 AND driverId = ( SELECT driverId FROM drivers WHERE forename = 'Sebastian' AND surname = 'Vettel' ) )",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT name FROM races WHERE raceId IN ( SELECT raceId FROM results WHERE rank = 1 AND driverId = ( SELECT driverId FROM drivers WHERE forename = 'Sebastian' AND surname = 'Vettel' ) )",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1011_rep2",
+    "question": "Formula 1 result records에서 가장 빠른 패스트랩을 기록한 상위 15명의 드라이버 전체 이름을 알려주세요.",
+    "gold_sql": "WITH fastest_lap_times_in_seconds AS (SELECT driverId, (CASE WHEN SUBSTR(fastestLapTime, 1, INSTR(fastestLapTime, ':') - 1) <> '' THEN CAST(SUBSTR(fastestLapTime, 1, INSTR(fastestLapTime, ':') - 1) AS REAL) * 60 ELSE 0 END + CASE WHEN SUBSTR(fastestLapTime, INSTR(fastestLapTime, ':') + 1, INSTR(fastestLapTime, '.') - INSTR(fastestLapTime, ':') - 1) <> '' THEN CAST(SUBSTR(fastestLapTime, INSTR(fastestLapTime, ':') + 1, INSTR(fastestLapTime, '.') - INSTR(fastestLapTime, ':') - 1) AS REAL) ELSE 0 END + CASE WHEN SUBSTR(fastestLapTime, INSTR(fastestLapTime, '.') + 1) <> '' THEN CAST(SUBSTR(fastestLapTime, INSTR(fastestLapTime, '.') + 1) AS REAL) / 1000 ELSE 0 END) AS time_in_seconds FROM results) SELECT T2.forename, T2.surname, T1.driverId FROM (SELECT driverId, MIN(time_in_seconds) AS min_time_in_seconds FROM fastest_lap_times_in_seconds GROUP BY driverId) AS T1 INNER JOIN drivers AS T2 ON T1.driverId = T2.driverId ORDER BY T1.min_time_in_seconds ASC LIMIT 15",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "WITH lap_times_in_seconds AS (\n    SELECT driverId, \n           (CASE WHEN SUBSTR(fastestLapTime, 1, INSTR(fastestLapTime, ':') - 1) <> '' \n                 THEN CAST(SUBSTR(fastestLapTime, 1, INSTR(fastestLapTime, ':') - 1) AS REAL) * 60 \n                 ELSE 0 END + \n            CASE WHEN SUBSTR(fastestLapTime, INSTR(fastestLapTime, ':') + 1, INSTR(fastestLapTime, '.') - INSTR(fastestLapTime, ':') - 1) <> '' \n                 THEN CAST(SUBSTR(fastestLapTime, INSTR(fastestLapTime, ':') + 1, INSTR(fastestLapTime, '.') - INSTR(fastestLapTime, ':') - 1) AS REAL) \n                 ELSE 0 END + \n            CASE WHEN SUBSTR(fastestLapTime, INSTR(fastestLapTime, '.') + 1) <> '' \n                 THEN CAST(SUBSTR(fastestLapTime, INSTR(fastestLapTime, '.') + 1) AS REAL) / 1000 \n                 ELSE 0 END) AS time_in_seconds \n    FROM results \n    WHERE fastestLapTime IS NOT NULL\n) \nSELECT d.forename || ' ' || d.surname AS full_name \nFROM lap_times_in_seconds AS lt \nJOIN drivers AS d ON lt.driverId = d.driverId \nJOIN (SELECT driverId, MIN(time_in_seconds) AS min_time \n      FROM lap_times_in_seconds \n      GROUP BY driverId) AS min_times ON lt.driverId = min_times.driverId \nORDER BY min_times.min_time ASC \nLIMIT 15",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "SELECT 절에서 드라이버 이름을 하나로 문자열 연결하지 말고 forename, surname, driverId를 각각 별도의 컬럼으로 출력하도록 변경하세요. 또한, CTE 내에서 WHERE fastestLapTime IS NOT NULL 조건을 제거하고, 드라이버별 최소 랩 타임(MIN)을 집계한 서브쿼리와 drivers 테이블을 직접 조인하여 결과를 구하도록 수정해 보세요.",
+        "sql": "WITH lap_times_in_seconds AS (\n    SELECT driverId, \n           (CASE WHEN SUBSTR(fastestLapTime, 1, INSTR(fastestLapTime, ':') - 1) <> '' \n                 THEN CAST(SUBSTR(fastestLapTime, 1, INSTR(fastestLapTime, ':') - 1) AS REAL) * 60 \n                 ELSE 0 END + \n            CASE WHEN SUBSTR(fastestLapTime, INSTR(fastestLapTime, ':') + 1, INSTR(fastestLapTime, '.') - INSTR(fastestLapTime, ':') - 1) <> '' \n                 THEN CAST(SUBSTR(fastestLapTime, INSTR(fastestLapTime, ':') + 1, INSTR(fastestLapTime, '.') - INSTR(fastestLapTime, ':') - 1) AS REAL) \n                 ELSE 0 END + \n            CASE WHEN SUBSTR(fastestLapTime, INSTR(fastestLapTime, '.') + 1) <> '' \n                 THEN CAST(SUBSTR(fastestLapTime, INSTR(fastestLapTime, '.') + 1) AS REAL) / 1000 \n                 ELSE 0 END) AS time_in_seconds \n    FROM results\n) \nSELECT d.forename, d.surname, lt.driverId \nFROM (SELECT driverId, MIN(time_in_seconds) AS min_time \n      FROM lap_times_in_seconds \n      GROUP BY driverId) AS lt \nJOIN drivers AS d ON lt.driverId = d.driverId \nORDER BY lt.min_time ASC \nLIMIT 15",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "959_rep2",
+    "question": "In the 2012 season, what was the fastest-lap number recorded by the winner whose finishing time is displayed in hour:minute:second.millisecond format?",
+    "gold_sql": "SELECT T1.fastestLap FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T2.year = 2012 AND T1.time LIKE '_:%:__.___'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.fastestLap FROM results AS T1 \nINNER JOIN races AS T2 ON T1.raceId = T2.raceId \nWHERE T2.year = 2012 AND T1.positionOrder = 1 AND T1.time LIKE '_:%:__.___'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "896_rep2",
+    "question": "Since the 2005 season, what percentage of race standings had Alonso placed anywhere other than first?",
+    "gold_sql": "SELECT CAST(COUNT(CASE WHEN T2.position <> 1 THEN T2.position END) AS REAL) * 100 / COUNT(T2.driverStandingsId) FROM races AS T1 INNER JOIN driverStandings AS T2 ON T2.raceId = T1.raceId INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId WHERE T3.surname = 'Alonso' AND T1.year >= 2005",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT (COUNT(CASE WHEN r.position != 1 THEN 1 END) * 100.0 / COUNT(*)) AS percentage\nFROM results r\nJOIN drivers d ON r.driverId = d.driverId\nJOIN races ra ON r.raceId = ra.raceId\nWHERE d.surname = 'Alonso' AND ra.year >= 2005",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "레이스 순위 정보는 results 테이블이 아닌 driverStandings 테이블을 참조해야 합니다. results 대신 driverStandings 테이블을 조인하고, position이 1이 아닌 경우의 수를 전체 driverStandingsId 건수로 나누어 백분율을 계산하도록 쿼리를 수정해 보세요.",
+        "sql": "SELECT (COUNT(CASE WHEN ds.position != 1 THEN 1 END) * 100.0 / COUNT(*)) AS percentage\nFROM driverStandings ds\nJOIN drivers d ON ds.driverId = d.driverId\nJOIN races r ON ds.raceId = r.raceId\nWHERE d.surname = 'Alonso' AND r.year >= 2005",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1001_rep2",
+    "question": "Which driver's first and last name belongs to the competitor with the fastest Q2 time at the 2012 race held at Circuit de Catalunya?",
+    "gold_sql": "SELECT T2.forename, T2.surname FROM qualifying AS T1 INNER JOIN drivers AS T2 ON T1.driverId = T2.driverId INNER JOIN races AS T3 ON T1.raceId = T3.raceId WHERE q2 IS NOT NULL AND T3.year = 2012 AND T3.circuitId IN (SELECT circuitId FROM circuits WHERE name = 'Circuit de Catalunya') ORDER BY CAST(SUBSTR(q2, 1, INSTR(q2, ':') - 1) AS INTEGER) * 60 + CAST(SUBSTR(q2, INSTR(q2, ':') + 1, INSTR(q2, '.') - INSTR(q2, ':') - 1) AS REAL) + CAST(SUBSTR(q2, INSTR(q2, '.') + 1) AS REAL) / 1000 ASC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.forename, d.surname \nFROM qualifying q \nJOIN races r ON q.raceId = r.raceId \nJOIN drivers d ON q.driverId = d.driverId \nWHERE r.year = 2012 AND q.q2 = (SELECT MIN(q2) FROM qualifying WHERE raceId = r.raceId) \nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "circuits 테이블을 조인하여 서킷 이름이 'Circuit de Catalunya'인 조건을 추가하고, q2가 NULL이 아닌 데이터를 필터링하세요. 또한 서브쿼리 대신 q2 시간 문자열을 초 단위로 변환하여 오름차순 정렬(ORDER BY ... ASC LIMIT 1)하는 방식으로 가장 빠른 드라이버를 조회하도록 수정하세요.",
+        "sql": "SELECT d.forename, d.surname \nFROM qualifying q \nJOIN races r ON q.raceId = r.raceId \nJOIN drivers d ON q.driverId = d.driverId \nJOIN circuits c ON r.circuitId = c.circuitId \nWHERE r.year = 2012 AND c.name = 'Circuit de Catalunya' AND q.q2 IS NOT NULL \nORDER BY (CAST(SUBSTR(q.q2, 1, INSTR(q.q2, ':') - 1) AS INTEGER) * 60 + CAST(SUBSTR(q.q2, INSTR(q.q2, ':') + 1) AS REAL)) ASC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "898_rep2",
+    "question": "Which British driver is the youngest, and how old is that driver?",
+    "gold_sql": "SELECT STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', dob), forename, surname FROM drivers WHERE nationality = 'British' ORDER BY dob DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT forename, surname, (strftime('%Y', 'now') - strftime('%Y', dob)) AS age\nFROM drivers\nWHERE nationality = 'British'\nORDER BY dob DESC\nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`SELECT` 절의 컬럼 순서를 나이 계산식, 드라이버 이름(`forename`), 성(`surname`) 순으로 변경하고, 나이를 계산할 때는 `'now'` 대신 `CURRENT_TIMESTAMP`를 활용하여 생년월일(`dob`)과의 연도 차이를 구하도록 수정하세요.",
+        "sql": "SELECT (strftime('%Y', CURRENT_TIMESTAMP) - strftime('%Y', dob)) AS age, forename, surname\nFROM drivers\nWHERE nationality = 'British'\nORDER BY dob DESC\nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "960_rep2",
+    "question": "What was the average number of points earned by drivers in the 2012 Canadian Grand Prix?",
+    "gold_sql": "SELECT AVG(T1.points) FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T2.year = 2012 AND T2.name = 'Canadian Grand Prix'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT AVG(results.points) \nFROM results \nJOIN races ON results.raceId = races.raceId \nWHERE races.name = 'Canadian Grand Prix' AND races.year = 2012",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "931_rep2",
+    "question": "In the 2016 Brazilian Grand Prix, what was the highest number of points earned by a driver?",
+    "gold_sql": "SELECT T2.points FROM races AS T1 INNER JOIN results AS T2 ON T2.raceId = T1.raceId WHERE T1.name = 'Brazilian Grand Prix' AND T1.year = 2016 AND T2.points IS NOT NULL ORDER BY T2.points DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT MAX(r.points) FROM results r JOIN races ra ON r.raceId = ra.raceId WHERE ra.name = 'Brazilian Grand Prix' AND ra.year = 2016",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "862_rep2",
+    "question": "How many drivers did not finish the 2008 Australian Grand Prix?",
+    "gold_sql": "SELECT COUNT(T3.driverId) FROM races AS T1 INNER JOIN results AS T2 ON T2.raceId = T1.raceId INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId WHERE T1.year = 2008 AND T1.name = 'Australian Grand Prix' AND T2.time IS NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM results r \nJOIN races ra ON r.raceId = ra.raceId \nWHERE ra.year = 2008 AND ra.name = 'Australian Grand Prix' AND r.time IS NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "981_rep2",
+    "question": "Which year did the driver with the highest assigned racing number first take part in qualifying? Provide the race name, date, and scheduled time as well.",
+    "gold_sql": "SELECT T3.year, T3.name, T3.date, T3.time FROM qualifying AS T1 INNER JOIN drivers AS T2 ON T1.driverId = T2.driverId INNER JOIN races AS T3 ON T1.raceId = T3.raceId WHERE T1.driverId = ( SELECT driverId FROM drivers WHERE number IS NOT NULL ORDER BY number DESC LIMIT 1 ) ORDER BY T3.date ASC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T3.year, T3.name, T3.date, T3.time \nFROM qualifying AS T1 \nINNER JOIN drivers AS T2 ON T1.driverId = T2.driverId \nINNER JOIN races AS T3 ON T1.raceId = T3.raceId \nWHERE T2.number = (SELECT MAX(number) FROM drivers WHERE number IS NOT NULL) \nORDER BY T3.date ASC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "955_rep2",
+    "question": "For each season from 1990 onward, what is the average finishing time in seconds for drivers who placed second?",
+    "gold_sql": "WITH time_in_seconds AS ( SELECT T2.year, T2.raceId, T1.positionOrder, CASE WHEN T1.positionOrder = 2 THEN (CAST(SUBSTR(T1.time, 1, 1) AS REAL) * 3600) + (CAST(SUBSTR(T1.time, 3, 2) AS REAL) * 60) + CAST(SUBSTR(T1.time, 6, 2) AS REAL) + CAST(SUBSTR(T1.time, 9) AS REAL) / 1000 ELSE 0 END AS time_seconds FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T1.time IS NOT NULL ), second_place_time AS ( SELECT year, raceId, time_seconds FROM time_in_seconds WHERE positionOrder = 2 ) SELECT year, AVG(time_seconds) FROM second_place_time WHERE year >= 1990 GROUP BY year HAVING AVG(time_seconds) IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "WITH time_in_seconds AS (\n    SELECT T2.year, T1.positionOrder, \n    CASE \n        WHEN T1.positionOrder = 2 THEN \n            (CAST(SUBSTR(T1.time, 1, 2) AS REAL) * 3600) + \n            (CAST(SUBSTR(T1.time, 4, 2) AS REAL) * 60) + \n            CAST(SUBSTR(T1.time, 7, 2) AS REAL) + \n            CAST(SUBSTR(T1.time, 10) AS REAL) / 1000 \n        ELSE 0 \n    END AS time_seconds \n    FROM results AS T1 \n    INNER JOIN races AS T2 ON T1.raceId = T2.raceId \n    WHERE T1.time IS NOT NULL \n)\nSELECT year, AVG(time_seconds) AS average_time_seconds \nFROM time_in_seconds \nWHERE year >= 1990 AND positionOrder = 2 \nGROUP BY year \nHAVING AVG(time_seconds) IS NOT NULL",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`time` 컬럼의 시간 문자열에서 시, 분, 초, 밀리초를 추출할 때 인덱스 위치를 각각 1번째 1글자, 3번째 2글자, 6번째 2글자, 9번째 이후 글자로 변경(`SUBSTR(T1.time, 1, 1)`, `SUBSTR(T1.time, 3, 2)`, `SUBSTR(T1.time, 6, 2)`, `SUBSTR(T1.time, 9)`)하여 초 단위 변환을 수행하세요. 또한 2위(`positionOrder = 2`) 기록을 별도로 필터링한 후 연도(`year`)별 평균 시간을 구하도록 쿼리를 수정하세요.",
+        "sql": "WITH time_in_seconds AS (\n    SELECT T2.year, \n    (CAST(SUBSTR(T1.time, 1, 1) AS REAL) * 3600) + \n    (CAST(SUBSTR(T1.time, 3, 2) AS REAL) * 60) + \n    CAST(SUBSTR(T1.time, 6, 2) AS REAL) + \n    CAST(SUBSTR(T1.time, 9) AS REAL) / 1000 AS time_seconds \n    FROM results AS T1 \n    INNER JOIN races AS T2 ON T1.raceId = T2.raceId \n    WHERE T1.time IS NOT NULL AND T1.positionOrder = 2\n)\nSELECT year, AVG(time_seconds) AS average_time_seconds \nFROM time_in_seconds \nWHERE year >= 1990 \nGROUP BY year \nHAVING AVG(time_seconds) IS NOT NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1003_rep2",
+    "question": "In the Monaco Grand Prix, how many engine failures were recorded for the driver with the most such failures?",
+    "gold_sql": "SELECT COUNT(T1.driverId) FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId INNER JOIN status AS T3 ON T1.statusId = T3.statusId WHERE T3.statusId = 5 AND T2.name = 'Monaco Grand Prix' GROUP BY T1.driverId ORDER BY COUNT(T1.driverId) DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.forename || ' ' || d.surname AS driver_name, COUNT(r.statusId) AS engine_failures\nFROM results r\nJOIN drivers d ON r.driverId = d.driverId\nJOIN races ra ON r.raceId = ra.raceId\nWHERE ra.name = 'Monaco Grand Prix' AND r.statusId = 5\nGROUP BY d.driverId\nORDER BY engine_failures DESC\nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`SELECT` 절에서 드라이버 이름(`forename`, `surname`)은 제외하고 가장 많은 엔진 결함 횟수(`COUNT(driverId)`)만 출력하도록 변경하세요. 또한, `status` 테이블을 조인하고 드라이버(`driverId`)별로 그룹화한 뒤, 결함 횟수 기준 내림차순 정렬하여 상위 1건만 조회(`LIMIT 1`)하도록 수정하세요.",
+        "sql": "SELECT COUNT(r.driverId) AS engine_failures\nFROM results r\nJOIN races ra ON r.raceId = ra.raceId\nWHERE ra.name = 'Monaco Grand Prix' AND r.statusId = 5\nGROUP BY r.driverId\nORDER BY engine_failures DESC\nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1014_rep2",
+    "question": "What is the fastest lap record achieved at a circuit located in Germany?",
+    "gold_sql": "WITH fastest_lap_times AS (SELECT T1.raceId, T1.FastestLapTime, (CAST(SUBSTR(T1.FastestLapTime, 1, INSTR(T1.FastestLapTime, ':') - 1) AS REAL) * 60) + (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, ':') + 1, INSTR(T1.FastestLapTime, '.') - INSTR(T1.FastestLapTime, ':') - 1) AS REAL)) + (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, '.') + 1) AS REAL) / 1000) AS time_in_seconds FROM results AS T1 WHERE T1.FastestLapTime IS NOT NULL) SELECT T1.FastestLapTime AS lap_record FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId INNER JOIN circuits AS T3 ON T2.circuitId = T3.circuitId INNER JOIN (SELECT MIN(fastest_lap_times.time_in_seconds) AS min_time_in_seconds FROM fastest_lap_times INNER JOIN races AS T2 ON fastest_lap_times.raceId = T2.raceId INNER JOIN circuits AS T3 ON T2.circuitId = T3.circuitId WHERE T3.country = 'Germany') AS T4 ON (CAST(SUBSTR(T1.FastestLapTime, 1, INSTR(T1.FastestLapTime, ':') - 1) AS REAL) * 60) + (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, ':') + 1, INSTR(T1.FastestLapTime, '.') - INSTR(T1.FastestLapTime, ':') - 1) AS REAL)) + (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, '.') + 1) AS REAL) / 1000) = T4.min_time_in_seconds LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "WITH fastest_lap_times AS (\n    SELECT T1.raceId, T1.FastestLapTime, \n           (CAST(SUBSTR(T1.FastestLapTime, 1, INSTR(T1.FastestLapTime, ':') - 1) AS REAL) * 60) + \n           (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, ':') + 1, INSTR(T1.FastestLapTime, '.') - INSTR(T1.FastestLapTime, ':') - 1) AS REAL)) + \n           (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, '.') + 1) AS REAL) / 1000) as time_in_seconds \n    FROM results AS T1 \n    WHERE T1.FastestLapTime IS NOT NULL \n) \nSELECT T1.FastestLapTime as lap_record \nFROM results AS T1 \nINNER JOIN races AS T2 on T1.raceId = T2.raceId \nINNER JOIN circuits AS T3 on T2.circuitId = T3.circuitId \nINNER JOIN (SELECT MIN(fastest_lap_times.time_in_seconds) as min_time_in_seconds \n            FROM fastest_lap_times \n            INNER JOIN races AS T2 on fastest_lap_times.raceId = T2.raceId \n            INNER JOIN circuits AS T3 on T2.circuitId = T3.circuitId \n            WHERE T3.country = 'Germany') AS T4 \nON (CAST(SUBSTR(T1.FastestLapTime, 1, INSTR(T1.FastestLapTime, ':') - 1) AS REAL) * 60) + \n   (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, ':') + 1, INSTR(T1.FastestLapTime, '.') - INSTR(T1.FastestLapTime, ':') - 1) AS REAL)) + \n   (CAST(SUBSTR(T1.FastestLapTime, INSTR(T1.FastestLapTime, '.') + 1) AS REAL) / 1000) = T4.min_time_in_seconds \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "877_rep2",
+    "question": "In race No. 873, which driver who earned points was the youngest?",
+    "gold_sql": "SELECT T1.forename, T1.surname FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId WHERE T2.raceId = 873 AND T2.points > 0 ORDER BY T1.dob DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.forename, T1.surname, T1.dob \nFROM drivers AS T1 \nINNER JOIN results AS T2 ON T1.driverId = T2.driverId \nWHERE T2.raceId = 873 AND T2.points > 0 \nORDER BY T1.dob DESC \nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`SELECT` 절에서 생년월일(`dob`)을 제외하고 질문에서 요구한 드라이버의 이름(`forename`, `surname`)만 출력하도록 수정하세요.",
+        "sql": "SELECT T1.forename, T1.surname \nFROM drivers AS T1 \nINNER JOIN results AS T2 ON T1.driverId = T2.driverId \nWHERE T2.raceId = 873 AND T2.points > 0 \nORDER BY T1.dob DESC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "989_rep2",
+    "question": "What was the recorded finish time of the winner of the 2012 Monaco Grand Prix?",
+    "gold_sql": "SELECT T1.time FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T2.name = 'Monaco Grand Prix' AND T2.year = 2012 AND T1.time LIKE '_:%:__.___'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.time FROM results AS T1 \nINNER JOIN races AS T2 ON T1.raceId = T2.raceId \nWHERE T2.name = 'Monaco Grand Prix' AND T2.year = 2012 AND T1.position = 1 AND T1.time LIKE '_:%:__.___'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "948_rep2",
+    "question": "What was the highest points total recorded by Italian constructors in the constructor standings?",
+    "gold_sql": "SELECT MAX(T1.points) FROM constructorStandings AS T1 INNER JOIN constructors AS T2 ON T1.constructorId = T2.constructorId WHERE T2.nationality = 'Italian'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT MAX(points) FROM constructorStandings cs JOIN constructors c ON cs.constructorId = c.constructorId WHERE c.nationality = 'Italian'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "909_rep2",
+    "question": "For races named 'Spanish Grand Prix', what percentage were held at circuits located in Spain?",
+    "gold_sql": "SELECT CAST(COUNT(CASE WHEN T1.country = 'Spain' THEN T2.circuitId END) AS REAL) * 100 / COUNT(T2.circuitId) FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId WHERE T2.name = 'Spanish Grand Prix'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(COUNT(CASE WHEN c.country = 'Spain' THEN 1 END) AS REAL) * 100 / COUNT(*) AS percentage \nFROM races r \nJOIN circuits c ON r.circuitId = c.circuitId \nWHERE r.name = 'Spanish Grand Prix'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "972_rep2",
+    "question": "Identify the drivers born in 1970 who recorded a fastest lap time in a race. Return each driver's ID and surname.",
+    "gold_sql": "SELECT T2.driverId, T2.surname FROM results AS T1 INNER JOIN drivers AS T2 ON T1.driverId = T2.driverId WHERE STRFTIME('%Y', T2.dob) = '1970' AND T1.fastestLapTime IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.driverId, d.surname \nFROM drivers d \nJOIN results r ON d.driverId = r.driverId \nWHERE STRFTIME('%Y', d.dob) = '1970' AND r.fastestLapTime IS NOT NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "902_rep2",
+    "question": "Which races did Lewis Hamilton take part in when his driver championship standing was below 5?",
+    "gold_sql": "SELECT T1.name FROM races AS T1 INNER JOIN driverStandings AS T2 ON T2.raceId = T1.raceId INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId WHERE T3.forename = 'Lewis' AND T3.surname = 'Hamilton' AND T2.position < 5",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT r.name FROM driverStandings ds JOIN drivers d ON ds.driverId = d.driverId JOIN races r ON ds.raceId = r.raceId WHERE d.forename = 'Lewis' AND d.surname = 'Hamilton' AND ds.position < 5",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "872_rep2",
+    "question": "For race ID 44, which driver's code corresponds to a Q3 qualifying time beginning with 1:13?",
+    "gold_sql": "SELECT T2.code FROM qualifying AS T1 INNER JOIN drivers AS T2 ON T2.driverId = T1.driverId WHERE T1.raceId = 44 AND T1.q3 LIKE '1:13%'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT d.code \nFROM drivers d \nJOIN qualifying q ON d.driverId = q.driverId \nWHERE q.raceId = 44 AND q.q3 LIKE '1:13%'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "964_rep2",
+    "question": "Show the driver reference IDs for drivers with British nationality.",
+    "gold_sql": "SELECT driverRef FROM drivers WHERE nationality = 'British'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT driverRef FROM drivers WHERE nationality = 'British'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "928_rep2",
+    "question": "At the 2010 Australian Grand Prix, which driver's fastest-lap rank was 1? Return the driver's reference name.",
+    "gold_sql": "SELECT T3.forename, T3.surname, T3.driverRef FROM races AS T1 INNER JOIN results AS T2 ON T2.raceId = T1.raceId INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId WHERE T1.name = 'Australian Grand Prix' AND T2.rank = 1 AND T1.year = 2010",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.driverRef \nFROM results r \nJOIN drivers d ON r.driverId = d.driverId \nJOIN races ra ON r.raceId = ra.raceId \nWHERE ra.year = 2010 AND ra.name = 'Australian Grand Prix' AND r.rank = 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "994_rep2",
+    "question": "From 1990 through 2020, which constructor accumulated the highest total points in the Italian Grand Prix? Return its points total, team name, and nationality.",
+    "gold_sql": "SELECT SUM(T1.points), T2.name, T2.nationality FROM constructorResults AS T1 INNER JOIN constructors AS T2 ON T1.constructorId = T2.constructorId INNER JOIN races AS T3 ON T3.raceid = T1.raceid WHERE T3.name = 'Italian Grand Prix' AND T3.year BETWEEN 1990 AND 2020 GROUP BY T2.name ORDER BY SUM(T1.points) DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT SUM(cr.points) AS total_points, c.name AS team_name, c.nationality \nFROM constructorResults cr \nJOIN races r ON cr.raceId = r.raceId \nJOIN constructors c ON cr.constructorId = c.constructorId \nWHERE r.name = 'Italian Grand Prix' AND r.year BETWEEN 1990 AND 2020 \nGROUP BY c.constructorId \nORDER BY total_points DESC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "937_rep2",
+    "question": "What was the recorded finish time of the driver with fastest-lap rank 1 at the 2012 Monaco Grand Prix?",
+    "gold_sql": "SELECT T1.time FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T1.rank = 1 AND T2.name = 'Monaco Grand Prix' AND T2.year = 2012",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT r.time \nFROM results AS r \nJOIN races AS ra ON r.raceId = ra.raceId \nWHERE ra.name = 'Monaco Grand Prix' AND ra.year = 2012 AND r.rank = 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "978_rep2",
+    "question": "Which circuit locations and geographic coordinates are listed for races held in Italy?",
+    "gold_sql": "SELECT DISTINCT location, lat, lng FROM circuits WHERE country = 'Italy'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT location, lat, lng FROM circuits WHERE country = 'Italy'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "912_rep2",
+    "question": "What is the reference name assigned to the Silverstone Circuit?",
+    "gold_sql": "SELECT circuitRef FROM circuits WHERE name = 'Silverstone Circuit'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT circuitRef FROM circuits WHERE name = 'Silverstone Circuit'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "910_rep2",
+    "question": "What are the latitude and longitude of the Circuit de Monaco?",
+    "gold_sql": "SELECT lat, lng FROM circuits WHERE name = 'Circuit de Monaco'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT lat, lng FROM circuits WHERE name = 'Circuit de Monaco'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "944_rep2",
+    "question": "By what percentage was the race winner quicker than the last driver to finish the 2016 Monaco Grand Prix?",
+    "gold_sql": "WITH time_in_seconds AS ( SELECT T1.positionOrder, CASE WHEN T1.positionOrder = 1 THEN (CAST(SUBSTR(T1.time, 1, 1) AS REAL) * 3600) + (CAST(SUBSTR(T1.time, 3, 2) AS REAL) * 60) + CAST(SUBSTR(T1.time, 6) AS REAL) ELSE CAST(SUBSTR(T1.time, 2) AS REAL) END AS time_seconds FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T2.name = 'Monaco Grand Prix' AND T1.time IS NOT NULL AND T2.year = 2016 ), champion_time AS ( SELECT time_seconds FROM time_in_seconds WHERE positionOrder = 1), last_driver_incremental AS ( SELECT time_seconds FROM time_in_seconds WHERE positionOrder = (SELECT MAX(positionOrder) FROM time_in_seconds) ) SELECT (CAST((SELECT time_seconds FROM last_driver_incremental) AS REAL) * 100) / (SELECT time_seconds + (SELECT time_seconds FROM last_driver_incremental) FROM champion_time)",
+    "final_correct": false,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    ((lastFinisher.timeGap / (winner.time + lastFinisher.timeGap)) * 100) AS percentage_quicker\nFROM \n    (SELECT \n        r.time AS time, \n        r.time - (SELECT MIN(r2.time) FROM results r2 WHERE r2.raceId = r.raceId AND r2.position IS NOT NULL) AS timeGap\n     FROM \n        results r \n     JOIN \n        races ra ON r.raceId = ra.raceId \n     WHERE \n        ra.year = 2016 AND ra.name = 'Monaco Grand Prix' AND r.position IS NOT NULL \n     ORDER BY \n        r.position DESC \n     LIMIT 1) AS lastFinisher,\n    (SELECT \n        r.time \n     FROM \n        results r \n     JOIN \n        races ra ON r.raceId = ra.raceId \n     WHERE \n        ra.year = 2016 AND ra.name = 'Monaco Grand Prix' AND r.position = 1) AS winner",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "CTE를 활용해 우승자(`positionOrder = 1`)의 완주 시간 문자열('H:MM:SS')을 초 단위로 변환하고, 최하위 완주자(`MAX(positionOrder)`)의 격차 시간 문자열('+초')에서 숫자를 추출해 초 단위로 변환하세요. 그 후 '최하위 완주자 격차 시간 * 100 / (우승자 완주 시간 + 최하위 완주자 격차 시간)' 공식을 적용해 백분율을 계산하도록 수정하세요.",
+        "sql": "WITH Winner AS (\n    SELECT \n        CAST(SUBSTR(time, 1, INSTR(time, ':') - 1) AS INTEGER) * 3600 +\n        CAST(SUBSTR(time, INSTR(time, ':') + 1, INSTR(time, ':', INSTR(time, ':') + 1) - INSTR(time, ':') - 1) AS INTEGER) * 60 +\n        CAST(SUBSTR(time, INSTR(time, ':', INSTR(time, ':') + 1) + 1) AS INTEGER) AS total_time_seconds\n    FROM \n        results r\n    JOIN \n        races ra ON r.raceId = ra.raceId\n    WHERE \n        ra.year = 2016 AND ra.name = 'Monaco Grand Prix' AND r.positionOrder = 1\n),\nLastFinisher AS (\n    SELECT \n        CAST(SUBSTR(MAX(time), 2) AS INTEGER) AS time_gap_seconds\n    FROM \n        results r\n    JOIN \n        races ra ON r.raceId = ra.raceId\n    WHERE \n        ra.year = 2016 AND ra.name = 'Monaco Grand Prix' AND r.positionOrder = (SELECT MAX(positionOrder) FROM results WHERE raceId = r.raceId)\n)\nSELECT \n    (LastFinisher.time_gap_seconds * 100.0 / (Winner.total_time_seconds + LastFinisher.time_gap_seconds)) AS percentage_quicker\nFROM \n    Winner, LastFinisher",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "하나의 CTE에서 `time IS NOT NULL` 조건으로 완주자 데이터를 필터링한 후, `positionOrder = 1`인 우승자는 `SUBSTR` 함수를 사용해 인덱스 위치(1번째 1글자, 3번째 2글자, 6번째 이후)로 시·분·초를 분리해 초 단위를 구하고 그 외 선수는 2번째 글자부터 추출해 초 단위 시간(`time_seconds`)을 변환하세요. 그 다음 우승자 시간과 최하위 완주자(`MAX(positionOrder)`)의 격차 시간을 각각 구해 `(최하위 완주자 격차 시간 * 100) / (우승자 시간 + 최하위 완주자 격차 시간)`으로 비율을 구하도록 쿼리를 수정하세요.",
+        "sql": "WITH Finishers AS (\n    SELECT \n        r.time,\n        r.positionOrder,\n        CAST(SUBSTR(r.time, 1, 1) AS INTEGER) * 3600 +\n        CAST(SUBSTR(r.time, 3, 2) AS INTEGER) * 60 +\n        CAST(SUBSTR(r.time, 6) AS INTEGER) AS time_seconds\n    FROM \n        results r\n    JOIN \n        races ra ON r.raceId = ra.raceId\n    WHERE \n        ra.year = 2016 AND ra.name = 'Monaco Grand Prix' AND r.time IS NOT NULL\n)\nSELECT \n    (lastFinisher.time_gap_seconds * 100.0 / (winner.total_time_seconds + lastFinisher.time_gap_seconds)) AS percentage_quicker\nFROM \n    (SELECT \n        time_seconds AS total_time_seconds\n     FROM \n        Finishers\n     WHERE \n        positionOrder = 1) AS winner,\n    (SELECT \n        CAST(SUBSTR(MAX(time), 2) AS INTEGER) AS time_gap_seconds\n     FROM \n        Finishers\n     WHERE \n        positionOrder = (SELECT MAX(positionOrder) FROM Finishers)) AS lastFinisher",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "question_id": "967_rep2",
+    "question": "출생일이 가장 최근인 드라이버 5명 중 국적이 British인 드라이버는 몇 명인가요?",
+    "gold_sql": "SELECT COUNT(*) FROM ( SELECT T1.nationality FROM drivers AS T1 ORDER BY JULIANDAY(T1.dob) DESC LIMIT 5) AS T3 WHERE T3.nationality = 'British'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) \nFROM drivers \nWHERE nationality = 'British' \nAND driverId IN (SELECT driverId \n                 FROM drivers \n                 ORDER BY dob DESC \n                 LIMIT 5)",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "881_rep2",
+    "question": "2010년 3월 14일에 열린 레이스 참가 드라이버들의 완주율은 얼마인가요?",
+    "gold_sql": "SELECT CAST(COUNT(CASE WHEN T2.time IS NOT NULL THEN T2.driverId END) AS REAL) * 100 / COUNT(T2.driverId) FROM races AS T1 INNER JOIN results AS T2 ON T2.raceId = T1.raceId WHERE T1.date = '2010-03-14'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT (COUNT(CASE WHEN r.time IS NOT NULL THEN 1 END) * 100.0 / COUNT(*)) AS completion_rate \nFROM results r \nJOIN races ra ON r.raceId = ra.raceId \nWHERE ra.date = '2010-03-14'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "859_rep2",
+    "question": "What was Lewis Hamilton's Q2 time in qualifying for race No. 1?",
+    "gold_sql": "SELECT T1.q2 FROM qualifying AS T1 INNER JOIN drivers AS T2 ON T2.driverId = T1.driverId WHERE T1.raceId = 1 AND T2.forename = 'Lewis' AND T2.surname = 'Hamilton'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT q.q2 \nFROM qualifying q \nJOIN drivers d ON q.driverId = d.driverId \nWHERE q.raceId = 1 AND d.forename = 'Lewis' AND d.surname = 'Hamilton'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "892_rep2",
+    "question": "Which driver has recorded the highest number of wins in a championship standing entry? Return the driver's first name, last name, and win total.",
+    "gold_sql": "SELECT T3.forename, T3.surname, T2.wins FROM races AS T1 INNER JOIN driverStandings AS T2 ON T2.raceId = T1.raceId INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId ORDER BY T2.wins DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.forename, d.surname, ds.wins \nFROM driverStandings ds \nJOIN drivers d ON ds.driverId = d.driverId \nWHERE ds.wins = (SELECT MAX(wins) FROM driverStandings)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`races`, `driverStandings`, `drivers` 테이블을 조인한 후, 서브쿼리로 최댓값을 찾는 대신 승수(`wins`) 기준 내림차순 정렬하여 상위 1건만 조회(`ORDER BY wins DESC LIMIT 1`)하도록 쿼리를 수정하세요.",
+        "sql": "SELECT d.forename, d.surname, ds.wins \nFROM driverStandings ds \nJOIN drivers d ON ds.driverId = d.driverId \nJOIN races r ON ds.raceId = r.raceId \nORDER BY ds.wins DESC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "950_rep2",
+    "question": "Which constructor names had zero wins in the standings for race 1000?",
+    "gold_sql": "SELECT T2.name FROM constructorStandings AS T1 INNER JOIN constructors AS T2 ON T1.constructorId = T2.constructorId WHERE T1.wins = 0 AND T1.raceId = 1000",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.name \nFROM constructors c \nJOIN constructorStandings cs ON c.constructorId = cs.constructorId \nWHERE cs.raceId = 1000 AND cs.wins = 0",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "904_rep2",
+    "question": "Identify the race name and season year where Lewis Hamilton recorded his quickest lap time.",
+    "gold_sql": "SELECT T1.name, T1.year FROM races AS T1 INNER JOIN lapTimes AS T2 ON T2.raceId = T1.raceId INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId WHERE T3.forename = 'Lewis' AND T3.surname = 'Hamilton' ORDER BY T2.milliseconds ASC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT r.name, r.year \nFROM races r \nJOIN lapTimes lt ON r.raceId = lt.raceId \nJOIN drivers d ON lt.driverId = d.driverId \nWHERE d.forename = 'Lewis' AND d.surname = 'Hamilton' \nAND lt.milliseconds = (SELECT MIN(milliseconds) FROM lapTimes WHERE driverId = d.driverId)",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "서브쿼리를 통해 최솟값을 찾는 대신, 테이블 조인 후 랩 타임(`milliseconds`) 기준 오름차순으로 정렬하여 상위 1건만 조회(`ORDER BY ... ASC LIMIT 1`)하도록 쿼리를 단순화해 보세요.",
+        "sql": "SELECT r.name, r.year \nFROM races r \nJOIN lapTimes lt ON r.raceId = lt.raceId \nJOIN drivers d ON lt.driverId = d.driverId \nWHERE d.forename = 'Lewis' AND d.surname = 'Hamilton' \nORDER BY lt.milliseconds ASC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "854_rep2",
+    "question": "Provide the latitude and longitude of the circuit that hosts the Monaco Grand Prix.",
+    "gold_sql": "SELECT DISTINCT T1.lat, T1.lng FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitId = T1.circuitId WHERE T2.name = 'Monaco Grand Prix'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.lat, c.lng \nFROM circuits c \nJOIN races r ON c.circuitId = r.circuitId \nWHERE r.name = 'Monaco Grand Prix'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`Monaco Grand Prix` 레이스가 여러 시즌에 걸쳐 개최되어 동일한 좌표가 중복으로 조회될 수 있으므로, `SELECT` 절에 `DISTINCT` 키워드를 추가하여 위도(`lat`)와 경도(`lng`)가 중복 없이 출력되도록 수정하세요.",
+        "sql": "SELECT DISTINCT c.lat, c.lng \nFROM circuits c \nJOIN races r ON c.circuitId = r.circuitId \nWHERE r.name = 'Monaco Grand Prix'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "880_rep2",
+    "question": "In races 853 and 854, by what percentage was Lewis Hamilton's fastest-lap speed in race 853 higher than in race 854?",
+    "gold_sql": "SELECT (SUM(IIF(T2.raceId = 853, T2.fastestLapSpeed, 0)) - SUM(IIF(T2.raceId = 854, T2.fastestLapSpeed, 0))) * 100 / SUM(IIF(T2.raceId = 853, T2.fastestLapSpeed, 0)) FROM drivers AS T1 INNER JOIN results AS T2 ON T2.driverId = T1.driverId WHERE T1.forename = 'Lewis' AND T1.surname = 'Hamilton'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT (CAST((SELECT lt1.milliseconds FROM lapTimes lt1 \n              JOIN results r1 ON lt1.raceId = r1.raceId \n              JOIN drivers d1 ON r1.driverId = d1.driverId \n              WHERE r1.raceId = 853 AND d1.forename = 'Lewis' AND d1.surname = 'Hamilton') AS REAL) - \n        CAST((SELECT lt2.milliseconds FROM lapTimes lt2 \n              JOIN results r2 ON lt2.raceId = r2.raceId \n              JOIN drivers d2 ON r2.driverId = d2.driverId \n              WHERE r2.raceId = 854 AND d2.forename = 'Lewis' AND d2.surname = 'Hamilton') AS REAL)) * 100.0 / \n        CAST((SELECT lt1.milliseconds FROM lapTimes lt1 \n              JOIN results r1 ON lt1.raceId = r1.raceId \n              JOIN drivers d1 ON r1.driverId = d1.driverId \n              WHERE r1.raceId = 853 AND d1.forename = 'Lewis' AND d1.surname = 'Hamilton') AS REAL) AS percentage_difference",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`lapTimes` 테이블과 `milliseconds` 컬럼 대신 `results` 테이블의 `fastestLapSpeed` 컬럼을 사용해야 합니다. `drivers`와 `results` 테이블만 조인한 후, `IIF` 조건식을 활용해 raceId가 853일 때와 854일 때의 `fastestLapSpeed`를 각각 구하여 백분율 공식 `(853속도 - 854속도) * 100 / 853속도`를 적용하도록 쿼리를 수정하세요.",
+        "sql": "SELECT IIF(fastestLapSpeed_853 IS NOT NULL AND fastestLapSpeed_854 IS NOT NULL, \n           (fastestLapSpeed_853 - fastestLapSpeed_854) * 100.0 / fastestLapSpeed_853, \n           NULL) AS percentage_difference\nFROM (\n    SELECT \n        (SELECT fastestLapSpeed FROM results WHERE raceId = 853 AND driverId = (SELECT driverId FROM drivers WHERE forename = 'Lewis' AND surname = 'Hamilton')) AS fastestLapSpeed_853,\n        (SELECT fastestLapSpeed FROM results WHERE raceId = 854 AND driverId = (SELECT driverId FROM drivers WHERE forename = 'Lewis' AND surname = 'Hamilton')) AS fastestLapSpeed_854\n) AS speeds",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "866_rep2",
+    "question": "In race number 1, which driver recorded a lap time beginning with 0:01:30? Return the driver's first name, last name, and profile website.",
+    "gold_sql": "SELECT DISTINCT T2.forename, T2.surname, T2.url FROM lapTimes AS T1 INNER JOIN drivers AS T2 ON T2.driverId = T1.driverId WHERE T1.raceId = 1 AND T1.time LIKE '1:30%'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.forename, d.surname, d.url \nFROM drivers d \nJOIN lapTimes lt ON d.driverId = lt.driverId \nWHERE lt.raceId = 1 AND lt.time LIKE '0:01:30%'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "990_rep2",
+    "question": "For the 2011 Belgian Grand Prix, what are the constructor reference and website of the entrant whose recorded result time is formatted as hours:minutes:seconds.milliseconds?",
+    "gold_sql": "SELECT T3.constructorRef, T3.url FROM results AS T1 INNER JOIN races AS T2 on T1.raceId = T2.raceId INNER JOIN constructors AS T3 on T1.constructorId = T3.constructorId WHERE T2.name = 'Belgian Grand Prix' AND T2.year = 2011 AND T1.time LIKE '_:%:__.___'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.constructorRef, c.url \nFROM results r \nJOIN constructors c ON r.constructorId = c.constructorId \nJOIN races ra ON r.raceId = ra.raceId \nWHERE ra.year = 2011 AND ra.name = 'Belgian Grand Prix' AND r.time LIKE '_:%:__.___'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "857_rep2",
+    "question": "What are the latitude and longitude of the circuit hosting the Belgian Grand Prix?",
+    "gold_sql": "SELECT DISTINCT T1.lat, T1.lng FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitID = T1.circuitId WHERE T2.name = 'Belgian Grand Prix'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT c.lat, c.lng \nFROM circuits c \nJOIN races r ON c.circuitId = r.circuitId \nWHERE r.name = 'Belgian Grand Prix'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "`Belgian Grand Prix` 레이스가 여러 시즌에 걸쳐 개최되어 동일한 좌표가 중복 조회될 수 있으므로, `SELECT` 절에 `DISTINCT` 키워드를 추가하여 위도(`lat`)와 경도(`lng`)가 중복 없이 출력되도록 수정하세요.",
+        "sql": "SELECT DISTINCT c.lat, c.lng \nFROM circuits c \nJOIN races r ON c.circuitId = r.circuitId \nWHERE r.name = 'Belgian Grand Prix'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "850_rep2",
+    "question": "List the names of races that took place at circuits located in Italy.",
+    "gold_sql": "SELECT DISTINCT T2.name FROM circuits AS T1 INNER JOIN races AS T2 ON T2.circuitID = T1.circuitId WHERE T1.country = 'Italy'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT r.name \nFROM races r \nJOIN circuits c ON r.circuitId = c.circuitId \nWHERE c.country = 'Italy'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "동일한 레이스 이름이 여러 시즌에 걸쳐 중복되어 조회될 수 있으므로, `SELECT` 절에 `DISTINCT` 키워드를 추가하여 레이스 이름(`name`)이 중복 없이 출력되도록 수정하세요.",
+        "sql": "SELECT DISTINCT r.name \nFROM races r \nJOIN circuits c ON r.circuitId = c.circuitId \nWHERE c.country = 'Italy'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "940_rep2",
+    "question": "2012년 모나코 그랑프리에서 기록된 완주 시간을 가진 드라이버는 몇 명인가요?",
+    "gold_sql": "SELECT COUNT(*) FROM results AS T1 INNER JOIN races AS T2 ON T1.raceId = T2.raceId WHERE T2.name = 'Monaco Grand Prix' AND T2.year = 2012 AND T1.time IS NOT NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) \nFROM results AS r \nJOIN races AS ra ON r.raceId = ra.raceId \nWHERE ra.year = 2012 AND ra.name = 'Monaco Grand Prix' AND r.time IS NOT NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "895_rep2",
+    "question": "What was the mean lap time recorded by Sebastian Vettel at the 2010 Bahrain Grand Prix?",
+    "gold_sql": "SELECT AVG(T2.milliseconds) FROM races AS T1 INNER JOIN lapTimes AS T2 ON T2.raceId = T1.raceId INNER JOIN drivers AS T3 ON T3.driverId = T2.driverId WHERE T3.forename = 'Sebastian' AND T3.surname = 'Vettel' AND T1.year = 2010 AND T1.name = 'Bahrain Grand Prix'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT AVG(lt.milliseconds) \nFROM lapTimes lt \nJOIN races r ON lt.raceId = r.raceId \nJOIN drivers d ON lt.driverId = d.driverId \nWHERE d.forename = 'Sebastian' AND d.surname = 'Vettel' \nAND r.name = 'Bahrain Grand Prix' \nAND r.year = 2010",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "861_rep2",
+    "question": "What is the racing number of the driver who recorded a 1:24 Q3 time in qualifying for race number 904?",
+    "gold_sql": "SELECT T2.number FROM qualifying AS T1 INNER JOIN drivers AS T2 ON T2.driverId = T1.driverId WHERE T1.raceId = 904 AND T1.q3 LIKE '1:24%'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT d.number FROM qualifying q JOIN drivers d ON q.driverId = d.driverId WHERE q.raceId = 904 AND q.q3 LIKE '1:24%'",
+        "correct": true
+      }
+    ]
+  }
+]

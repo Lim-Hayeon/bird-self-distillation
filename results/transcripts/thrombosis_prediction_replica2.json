@@ -1,0 +1,562 @@
+[
+  {
+    "question_id": "1155_rep2",
+    "question": "Show the ID, admission status, and diagnosis for patients who have a GOT value above the specified threshold.",
+    "gold_sql": "SELECT DISTINCT T1.ID, T1.Admission, T1.Diagnosis FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.GOT > 100",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT P.ID, P.Admission, P.Diagnosis FROM Patient P JOIN Laboratory L ON P.ID = L.ID WHERE L.GOT > 100",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "Patient(환자) 테이블과 Laboratory(검사 기록) 테이블은 1:N(일대다) 관계일 가능성이 높습니다. 한 환자가 GOT 수치가 100이 넘는 검사 기록을 여러 개 가지고 있을 경우 단순 JOIN을 사용하면 동일한 환자의 정보가 중복되어 출력됩니다. 최종 결과에서 환자 정보가 중복되지 않도록 고유한 값만 추출하도록 쿼리를 수정해 보세요.",
+        "sql": "SELECT DISTINCT P.ID, P.Admission, P.Diagnosis FROM Patient P JOIN Laboratory L ON P.ID = L.ID WHERE L.GOT > 100",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1227_rep2",
+    "question": "What is the average age of female patients with elevated triglyceride levels?",
+    "gold_sql": "SELECT AVG(STRFTIME('%Y', date('NOW')) - STRFTIME('%Y', T1.Birthday)) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.TG >= 150 AND T1.SEX = 'F'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT AVG(STRFTIME('%Y', 'now') - STRFTIME('%Y', T1.Birthday)) \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T1.SEX = 'F' AND T2.TG >= 150",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1238_rep2",
+    "question": "Among female patients with a hematocrit level between 30 and 50, who is the oldest? Return the patient ID and sex.",
+    "gold_sql": "SELECT T1.ID, T1.SEX FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.SEX = 'F' AND T2.HCT > 30 AND T2.HCT < 50 ORDER BY T1.Birthday ASC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.ID, T1.SEX FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.SEX = 'F' AND T2.HCT BETWEEN 30 AND 50 ORDER BY T1.Birthday ASC LIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1270_rep2",
+    "question": "항SS-A 검사 결과가 정상인 환자 중 남성이면서 혈전증이 기록되지 않은 환자는 몇 명인가요?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID INNER JOIN Examination AS T3 ON T3.ID = T2.ID WHERE (T2.SSA = 'negative' OR T2.SSA = '0') AND T1.SEX = 'M' AND T3.Thrombosis IS NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T2.SSA IN ('negative', '0') AND T1.SEX = 'M' AND T2.Thrombosis IS NULL",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "항SS-A 검사 결과(SSA)는 검사 기록(Laboratory) 테이블에 속해 있고, 혈전증(Thrombosis) 항목은 진찰(Examination) 테이블에 존재합니다. 서로 다른 두 테이블에 나뉘어 있는 정보이므로, 검사 테이블과 진찰 테이블을 모두 조인하여 각각의 컬럼을 조건절에 참조해야 합니다.",
+        "sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID INNER JOIN Examination AS T3 ON T1.ID = T3.ID WHERE T2.SSA IN ('negative', '0') AND T1.SEX = 'M' AND T3.Thrombosis IS NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1239_rep2",
+    "question": "List the patient IDs and ages of individuals who have at least two laboratory records with white blood cell counts above the normal range.",
+    "gold_sql": "SELECT DISTINCT T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.ID IN ( SELECT ID FROM Laboratory WHERE WBC >= 10 GROUP BY ID HAVING COUNT(ID) >= 2 )",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) AS Age \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T2.WBC >= 10 \nGROUP BY T1.ID \nHAVING COUNT(T2.ID) >= 2",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1220_rep2",
+    "question": "총 빌리루빈(T-BIL) 수치가 0.6인 환자의 ID, 성별 및 생년월일을 모두 보여주세요.",
+    "gold_sql": "SELECT DISTINCT T1.ID, T1.SEX, T1.Birthday FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.`T-BIL` = 0.6",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.ID, T1.SEX, T1.Birthday FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.`T-BIL` = 0.6",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "한 환자가 조건을 만족하는 검사 기록을 여러 개 가질 수 있으므로, 단순 JOIN을 수행하면 환자 정보가 중복 조회될 수 있습니다. 환자당 한 번만 결과에 출력되도록 중복을 제거해야 합니다.",
+        "sql": "SELECT DISTINCT T1.ID, T1.SEX, T1.Birthday FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.`T-BIL` = 0.6",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1150_rep2",
+    "question": "Among male patients, what percentage were born after 1940?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN STRFTIME('%Y', Birthday) > '1940' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(*) FROM Patient WHERE SEX = 'M'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(COUNT(CASE WHEN Birthday > '1940-12-31' THEN ID END) AS REAL) * 100 / COUNT(ID) FROM Patient WHERE SEX = 'M'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1241_rep2",
+    "question": "For patients with an abnormal glucose measurement, what is the difference between the number with low glucose levels and the number with high glucose levels?",
+    "gold_sql": "SELECT SUM(CASE WHEN T2.GLU <= 70 THEN 1 ELSE 0 END) - SUM(CASE WHEN T2.GLU >= 140 THEN 1 ELSE 0 END) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT SUM(CASE WHEN T2.GLU <= 70 THEN 1 ELSE 0 END) - SUM(CASE WHEN T2.GLU >= 140 THEN 1 ELSE 0 END) \nFROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T2.GLU <= 70 OR T2.GLU >= 140",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1205_rep2",
+    "question": "Did patient number 57267 have a triglyceride level above the sex-specific threshold?",
+    "gold_sql": "SELECT CASE WHEN (T1.SEX = 'F' AND T2.TG > 130) OR (T1.SEX = 'M' AND T2.TG > 160) THEN true ELSE false END FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.ID = 57267",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CASE WHEN (T1.SEX = 'F' AND T2.TG > 130) OR (T1.SEX = 'M' AND T2.TG > 160) THEN true ELSE false END \nFROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.ID = 57267",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1256_rep2",
+    "question": "How many patients with a positive rheumatoid factor result have no admission information recorded?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE (T2.RF = '+') AND T1.Admission IS NULL",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.RF = '+' AND T1.Admission IS NULL",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1164_rep2",
+    "question": "How many male patients underwent an examination in 1998 where thrombosis was recorded as absent?",
+    "gold_sql": "SELECT COUNT(*) FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T1.SEX = 'M' AND STRFTIME('%Y', T2.`Examination Date`) = '1998' AND T2.Thrombosis = 0",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T1.SEX = 'M' AND T2.`Examination Date` LIKE '1998%' AND T2.Thrombosis = 0",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1201_rep2",
+    "question": "Among patients born in 1975 with an SLE diagnosis, what percentage are male?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN SEX = 'M' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(ID) FROM Patient WHERE Diagnosis = 'SLE' AND STRFTIME('%Y', Birthday) = '1975'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN SEX = 'M' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(SEX) \nFROM Patient \nWHERE YEAR(Birthday) = '1975' AND Diagnosis = 'SLE'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "날짜 데이터에서 연도를 추출할 때는 YEAR() 함수 대신 STRFTIME('%Y', Birthday)와 같은 날짜 포맷 함수를 사용해야 하며, 비율 계산 시 전체 대상자 수는 환자 식별자(ID)를 기준으로 카운트하는 것이 정확합니다.",
+        "sql": "SELECT CAST(SUM(CASE WHEN SEX = 'M' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(ID) \nFROM Patient \nWHERE STRFTIME('%Y', Birthday) = '1975' AND Diagnosis = 'SLE'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1257_rep2",
+    "question": "How many patients with a uric acid level of at least 7.0 are younger than 65 years old?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.UA >= 7.0 AND STRFTIME('%Y', Date('now')) - STRFTIME('%Y', T1.Birthday) < 65",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) \nFROM Patient AS P \nJOIN Laboratory AS L ON P.ID = L.ID \nWHERE L.UA >= 7.0 AND (STRFTIME('%Y', date('now')) - STRFTIME('%Y', P.Birthday)) < 65",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "한 환자가 요산 수치 조건(7.0 이상)을 만족하는 검사 기록을 여러 개 가질 수 있습니다. 전체 행 수(COUNT(*))를 카운트하면 동일한 환자가 중복 집계되므로, 환자 식별자 기준 중복을 제거한 고유 환자 수를 산출해야 합니다.",
+        "sql": "SELECT COUNT(DISTINCT P.ID) \nFROM Patient AS P \nJOIN Laboratory AS L ON P.ID = L.ID \nWHERE L.UA >= 7.0 AND (STRFTIME('%Y', date('now')) - STRFTIME('%Y', P.Birthday)) < 65",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1153_rep2",
+    "question": "For patient ID 30610, what diagnosis is recorded, and on which dates were laboratory tests performed?",
+    "gold_sql": "SELECT T1.Diagnosis, T2.Date FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.ID = 30610",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.Diagnosis, T2.Date FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.ID = 30610",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1235_rep2",
+    "question": "For patients with low hemoglobin levels, provide their sex, ID, and age.",
+    "gold_sql": "SELECT DISTINCT T1.SEX, T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.HGB < 10",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.SEX, T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) AS Age \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T2.HGB < 10",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "한 환자가 기준 미만(HGB < 10)인 검사 기록을 여러 개 보유하고 있을 수 있으므로, 단순 조인 시 결과에 동일한 환자 정보가 중복해서 조회될 수 있습니다. 출력 시 환자 정보가 중복되지 않도록 고유한 결과만 조회되도록 수정하세요.",
+        "sql": "SELECT DISTINCT T1.SEX, T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) AS Age \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T2.HGB < 10",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1162_rep2",
+    "question": "How many male patients had their first visit in 1997 and were immediately followed at the outpatient clinic?",
+    "gold_sql": "SELECT COUNT(*) FROM Patient WHERE STRFTIME('%Y', `First Date`) = '1997' AND SEX = 'M' AND Admission = '-'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM Patient WHERE SEX = 'M' AND STRFTIME('%Y', `First Date`) = '1997' AND Admission = '-'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1267_rep2",
+    "question": "류마티스 인자(RF)가 정상인 환자 중 혈전증이 있는 환자는 몇 명인가요?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Examination AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.RF IN ('negative','0') AND T1.Thrombosis = 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE (T2.RF IN ('negative', '0')) AND T1.Thrombosis = 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "혈전증(Thrombosis) 정보는 Patient(환자) 테이블이 아닌 Examination(진찰) 테이블에 저장되어 있습니다. 혈전증 여부를 조회하려면 Patient 대신 Examination 테이블을 Laboratory 테이블과 조인하여 조건절을 작성해야 합니다",
+        "sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID INNER JOIN Examination AS T3 ON T1.ID = T3.ID WHERE T2.RF IN ('negative', '0') AND T3.Thrombosis = 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1225_rep2",
+    "question": "Show the patient IDs and sexes of individuals with elevated GPT measurements, grouping the results by sex and patient.",
+    "gold_sql": "SELECT T1.ID,T1.SEX FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.GPT >= 40 GROUP BY T1.SEX,T1.ID",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT T1.ID, T1.SEX FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.GPT >= 40 GROUP BY T1.SEX, T1.ID",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1192_rep2",
+    "question": "Identify all female patients who received laboratory testing in January 1992 and whose glucose level was above 100.",
+    "gold_sql": "SELECT DISTINCT T1.ID FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.SEX = 'F' AND T2.GLU > 100 AND T2.Date LIKE '1992-01-%'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT T1.ID \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T1.SEX = 'F' AND T2.Date LIKE '1992-01-%' AND T2.GLU > 100",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1157_rep2",
+    "question": "Show the patient ID, sex, and diagnosis for individuals documented with mild thrombosis.",
+    "gold_sql": "SELECT DISTINCT T1.ID, T1.SEX, T1.Diagnosis FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T2.Thrombosis = 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT P.ID, P.SEX, P.Diagnosis FROM Patient P JOIN Examination E ON P.ID = E.ID WHERE E.Thrombosis = 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1152_rep2",
+    "question": "Among female patients, what is the ratio of inpatient to outpatient follow-up treatment?",
+    "gold_sql": "SELECT SUM(CASE WHEN Admission = '+' THEN 1.0 ELSE 0 END) / SUM(CASE WHEN Admission = '-' THEN 1 ELSE 0 END) FROM Patient WHERE SEX = 'F'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN Admission = '+' THEN 1 ELSE 0 END) AS REAL) / NULLIF(SUM(CASE WHEN Admission = '-' THEN 1 ELSE 0 END), 0) FROM Patient WHERE SEX = 'F'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1231_rep2",
+    "question": "Among patients born from 1945 through 1965, how many female patients had a GOT level at or above 40?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE STRFTIME('%Y', T1.Birthday) BETWEEN '1945' AND '1965' AND T1.SEX = 'F' AND T2.GOT >= 40",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.SEX = 'F' AND T2.GOT >= 40 AND STRFTIME('%Y', T1.Birthday) BETWEEN '1945' AND '1965'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1169_rep2",
+    "question": "What is the ratio of male to female patients who have low platelet counts?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN T2.PLT <= 100 AND T1.SEX = 'M' THEN 1 ELSE 0 END) AS REAL) / SUM(CASE WHEN T2.PLT <= 120 AND T1.SEX = 'F' THEN 1 ELSE 0 END) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN T1.SEX = 'M' AND T2.PLT <= 100 THEN 1 ELSE 0 END) AS REAL) / NULLIF(SUM(CASE WHEN T1.SEX = 'F' AND T2.PLT <= 120 THEN 1 ELSE 0 END), 0) AS Ratio\nFROM Patient AS T1\nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1209_rep2",
+    "question": "List the diagnoses of patients whose GOT levels exceed the normal limit, ordered from oldest to youngest by birth date.",
+    "gold_sql": "SELECT DISTINCT T1.Diagnosis FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.GOT > 40 ORDER BY T1.Birthday ASC",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT P.Diagnosis \nFROM Patient P \nJOIN Laboratory L ON P.ID = L.ID \nWHERE L.GOT > 40 \nORDER BY P.Birthday ASC",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1275_rep2",
+    "question": "항-RNP와 항-SM 수치가 모두 정상인 여성 환자는 몇 명입니까?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.RNP IN ('negative', '0') AND T2.SM IN ('negative', '0') AND T1.SEX = 'F'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.RNP IN ('negative', '0') AND T2.SM IN ('negative', '0') AND T1.SEX = 'F'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1302_rep2",
+    "question": "Among patients whose GOT level is within the normal range, how many have a positive result for at least one anticardiolipin antibody test?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID INNER JOIN Examination AS T3 ON T1.ID = T3.ID WHERE T2.GOT < 40 AND (T3.`aCL IgG` > 0 OR T3.`aCL IgM` > 0 OR T3.`aCL IgA` > 0)",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(T1.ID) FROM Laboratory AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T1.GOT < 40 AND (T2.`aCL IgG` > 0 OR T2.`aCL IgM` > 0 OR T2.`aCL IgA` > 0)",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1171_rep2",
+    "question": "How many patients aged 65 or older received an examination between 1985 and 1988?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE STRFTIME('%Y', T2.`Examination Date`) BETWEEN '1985' AND '1988' AND STRFTIME('%Y', T2.`Examination Date`) - STRFTIME('%Y', T1.Birthday) >= 65",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM Patient P JOIN Examination E ON P.ID = E.ID WHERE (STRFTIME('%Y', E.`Examination Date`) - STRFTIME('%Y', P.Birthday)) >= 65 AND STRFTIME('%Y', E.`Examination Date`) BETWEEN '1985' AND '1988'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1189_rep2",
+    "question": "How many examination records with thrombosis level 1 and an ANA pattern of H have an anti-cardiolipin IgG value more than 20% above the average for that same group?",
+    "gold_sql": "SELECT COUNT(*) FROM Examination WHERE Thrombosis = 1 AND `ANA Pattern` = 'H' AND `aCL IgG` > (SELECT AVG(`aCL IgG`) * 1.2 FROM Examination WHERE Thrombosis = 1 AND `ANA Pattern` = 'H')",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM Examination WHERE Thrombosis = 1 AND `ANA Pattern` = 'H' AND `aCL IgG` > (SELECT AVG(`aCL IgG`) * 1.2 FROM Examination WHERE Thrombosis = 1 AND `ANA Pattern` = 'H')",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1185_rep2",
+    "question": "Among female patients, what is the rate of decrease in triglyceride levels from October to November 1981?",
+    "gold_sql": "SELECT CAST((SUM(CASE WHEN T2.Date LIKE '1981-10-%' THEN T2.TG ELSE 0 END) - SUM(CASE WHEN T2.Date LIKE '1981-11-%' THEN T2.TG ELSE 0 END)) AS REAL) / SUM(CASE WHEN T2.Date LIKE '1981-11-%' THEN T2.TG ELSE 0 END) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T1.SEX = 'F'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT \n    (SUM(CASE WHEN T1.SEX = 'F' AND T2.Date LIKE '1981-10-%' THEN T2.TG ELSE 0 END) - \n     SUM(CASE WHEN T1.SEX = 'F' AND T2.Date LIKE '1981-11-%' THEN T2.TG ELSE 0 END)) / \n    NULLIF(SUM(CASE WHEN T1.SEX = 'F' AND T2.Date LIKE '1981-11-%' THEN T2.TG ELSE 0 END), 0) AS Rate_of_Decrease\nFROM \n    Patient AS T1 \nINNER JOIN \n    Laboratory AS T2 ON T1.ID = T2.ID \nWHERE \n    T1.SEX = 'F'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "정수 간의 나눗셈을 수행하면 소수점 이하 자리가 절사되어 결과가 0으로 출력될 수 있으므로, 정확한 비율 계산을 위해 분자 연산 결과를 실수형(REAL)으로 형변환 해야 합니다. 또한 WHERE 절에서 이미 여성 조건(SEX = 'F')을 필터링하고 있으므로 CASE 문 내부에서 성별 조건을 중복 지정할 필요가 없습니다.",
+        "sql": "SELECT \n    (CAST(SUM(CASE WHEN T2.Date LIKE '1981-10-%' THEN T2.TG ELSE 0 END) AS REAL) - \n     SUM(CASE WHEN T2.Date LIKE '1981-11-%' THEN T2.TG ELSE 0 END)) / \n    NULLIF(SUM(CASE WHEN T2.Date LIKE '1981-11-%' THEN T2.TG ELSE 0 END), 0) AS Rate_of_Decrease\nFROM \n    Patient AS T1 \nINNER JOIN \n    Laboratory AS T2 ON T1.ID = T2.ID \nWHERE \n    T1.SEX = 'F'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1179_rep2",
+    "question": "For the female patient born on 1955-01-01, what were the anti-Cardiolipin antibody measurement results on 1994-02-19?",
+    "gold_sql": "SELECT `aCL IgG`, `aCL IgM`, `aCL IgA` FROM Examination WHERE ID IN ( SELECT ID FROM Patient WHERE SEX = 'F' AND Birthday = '1955-01-01' ) AND `Examination Date` = '1994-02-19'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT `aCL IgA`, `aCL IgG`, `aCL IgM` FROM Examination WHERE ID IN (SELECT ID FROM Patient WHERE SEX = 'F' AND Birthday = '1955-01-01') AND `Examination Date` = '1994-02-19'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1255_rep2",
+    "question": "Among patients with platelet counts outside the normal range, which diagnosis occurs most frequently?",
+    "gold_sql": "SELECT T1.Diagnosis FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.PLT NOT BETWEEN 150 AND 450 GROUP BY T1.Diagnosis ORDER BY COUNT(T1.Diagnosis) DESC LIMIT 1",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT Diagnosis \nFROM Laboratory L \nWHERE L.PLT <= 150 OR L.PLT >= 450 \nGROUP BY Diagnosis \nORDER BY COUNT(Diagnosis) DESC \nLIMIT 1",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "진단명(Diagnosis) 정보는 Patient 테이블에 존재하며, 혈소판 수치(PLT)는 Laboratory 테이블에 존재합니다. 비정상 혈소판 수치를 가진 환자의 진단명별 빈도를 정확히 집계하려면 두 테이블을 식별자(ID) 기준으로 조인해야 합니다.",
+        "sql": "SELECT P.Diagnosis \nFROM Patient P \nJOIN Laboratory L ON P.ID = L.ID \nWHERE L.PLT <= 150 OR L.PLT >= 450 \nGROUP BY P.Diagnosis \nORDER BY COUNT(P.Diagnosis) DESC \nLIMIT 1",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1242_rep2",
+    "question": "For laboratory tests performed in 1985, return the IDs of patients younger than 40 years whose white blood cell count was within the normal range.",
+    "gold_sql": "SELECT DISTINCT T1.ID FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.WBC BETWEEN 3.5 AND 9.0 AND STRFTIME('%Y', T2.Date) - STRFTIME('%Y', T1.Birthday) < 40 AND STRFTIME('%Y', T2.Date) = '1985'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT T1.ID \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T2.Date BETWEEN '1985-01-01' AND '1985-12-31' \nAND (STRFTIME('%Y', T2.Date) - STRFTIME('%Y', T1.Birthday)) < 40 \nAND T2.WBC BETWEEN 3.5 AND 9.0",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1156_rep2",
+    "question": "List the patient IDs and ages for individuals whose LAC test result is positive.",
+    "gold_sql": "SELECT DISTINCT T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) FROM Patient AS T1 INNER JOIN Examination AS T2 ON T1.ID = T2.ID WHERE T2.LAC = '+'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT T1.ID, STRFTIME('%Y', CURRENT_TIMESTAMP) - STRFTIME('%Y', T1.Birthday) AS Age \nFROM Patient AS T1 \nINNER JOIN Examination AS T2 ON T1.ID = T2.ID \nWHERE T2.LAC = '+'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1265_rep2",
+    "question": "How many female patients have a normal anti-Smith antibody result?",
+    "gold_sql": "SELECT COUNT(DISTINCT T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.SM = 'negative' OR T2.SM = '0' AND T1.SEX = 'F'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(DISTINCT T1.ID) \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T1.SEX = 'F' AND T2.SM = 'negative' OR T2.SM = '0'",
+        "correct": false
+      },
+      {
+        "attempt": 2,
+        "hint": "WHERE 절에서 AND와 OR 연산자가 함께 사용될 때 괄호로 묶지 않으면 연산자 우선순위 때문에 성별 조건(SEX = 'F')에 상관없이 SM 수치가 '0'인 환자까지 포함되는 논리적 오류가 발생합니다. 복합 조건이 의도한 대로 평가되도록 괄호를 사용하여 조건 우선순위를 명확히 지정해 주세요.",
+        "sql": "SELECT COUNT(DISTINCT T1.ID) \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T1.SEX = 'F' AND (T2.SM = 'negative' OR T2.SM = '0')",
+        "correct": false
+      },
+      {
+        "attempt": 3,
+        "hint": "SM 수치가 'negative'인 경우와, SM 수치가 '0'이면서 여성(SEX = 'F')인 경우를 결합하는 논리 구조를 가져야 합니다. 성별 조건이 '0' 조건에만 적용되도록 연산자 순서를 조정해 보세요.",
+        "sql": "SELECT COUNT(DISTINCT T1.ID) \nFROM Patient AS T1 \nINNER JOIN Laboratory AS T2 ON T1.ID = T2.ID \nWHERE T2.SM = 'negative' OR (T2.SM = '0' AND T1.SEX = 'F')",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1149_rep2",
+    "question": "여성 환자 중 입원 환자 수는 외래 환자 수의 몇 퍼센트인가요?",
+    "gold_sql": "SELECT CAST(SUM(CASE WHEN Admission = '+' THEN 1 ELSE 0 END) AS REAL) * 100 / SUM(CASE WHEN Admission = '-' THEN 1 ELSE 0 END) FROM Patient WHERE SEX = 'F'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT CAST(SUM(CASE WHEN Admission = '+' THEN 1 ELSE 0 END) AS REAL) * 100 / SUM(CASE WHEN Admission = '-' THEN 1 ELSE 0 END) \nFROM Patient \nWHERE SEX = 'F'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1254_rep2",
+    "question": "How many patients had an Ig M level within the normal range and first visited the hospital after 1995?",
+    "gold_sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.IGM BETWEEN 40 AND 350 AND strftime('%Y', T1.`First Date`) > '1995'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(T1.ID) FROM Patient AS T1 INNER JOIN Laboratory AS T2 ON T1.ID = T2.ID WHERE T2.IGM BETWEEN 40 AND 350 AND STRFTIME('%Y', T1.`First Date`) > '1995'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1198_rep2",
+    "question": "How many male patients have been diagnosed with SLE?",
+    "gold_sql": "SELECT COUNT(ID) FROM Patient WHERE SEX = 'M' AND Diagnosis = 'SLE'",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT COUNT(*) FROM Patient WHERE SEX = 'M' AND Diagnosis = 'SLE'",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "question_id": "1187_rep2",
+    "question": "Which patient IDs had laboratory results recorded from 1988-01-01 through 1995-12-31 with GOT above 40 and TP below 6.5?",
+    "gold_sql": "SELECT DISTINCT ID FROM Laboratory WHERE Date BETWEEN '1988-01-01' AND '1995-12-31' AND GOT > 40 AND TP < 6.5",
+    "final_correct": true,
+    "turns": [
+      {
+        "attempt": 1,
+        "sql": "SELECT DISTINCT ID FROM Laboratory WHERE Date BETWEEN '1988-01-01' AND '1995-12-31' AND GOT > 40 AND TP < 6.5",
+        "correct": true
+      }
+    ]
+  }
+]
